@@ -41,6 +41,10 @@ Syntree.config_maps.workspace.map = {
         require: 'string',
         default_value: '#undefined',
     },
+    client_export_enabled: {
+        require: 'boolean',
+        default_value: false,
+    },
     /**
      * Is focus checking enabled?
      * Focus checking is for if the app is embedded within a larger page.
