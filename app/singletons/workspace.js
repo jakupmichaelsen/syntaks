@@ -93,7 +93,7 @@ Syntree.Workspace = {
         }
 
         // Export functionality.
-        if (Syntree.Lib.checkType(this.export_tree_script, 'undefined')) {
+        if (Syntree.Lib.checkType(this.export_tree_script, 'undefined') && !this.client_export_enabled) {
             $('.toolbar_button__export').remove();
             $('.modal_export').remove();
         }
@@ -246,7 +246,7 @@ Syntree.Workspace = {
         }
 
         // Exporting trees.
-        if (Syntree.Lib.checkType(this.export_tree_script, 'string')) {
+        if (Syntree.Lib.checkType(this.export_tree_script, 'string') || this.client_export_enabled) {
             $(document)
                 .on(
                     'click',
@@ -264,6 +264,8 @@ Syntree.Workspace = {
                             Syntree.Workspace._eventExportBrackets();
                         } else if (type === 'tree-file') {
                             Syntree.Workspace._eventExportTreeFile();
+                        } else if (type === 'json-file') {
+                            Syntree.Workspace._eventExportJSON();
                         } else if (type === 'png') {
                             Syntree.Workspace._eventExportImage();
                         }
@@ -271,6 +273,32 @@ Syntree.Workspace = {
                     }
                 );
         }
+
+        // New Tree
+        $(document).on('click', '.toolbar_button__new-tree', function() {
+            Syntree.Workspace.page.addTree();
+            Syntree.Workspace.page.select(Syntree.Workspace.page.tree.getRoot());
+        });
+
+        // New Project
+        $(document).on('click', '.toolbar_button__new-project', function() {
+            if (confirm('Start a new project? All unsaved work will be lost.')) {
+                window.location.reload();
+            }
+        });
+
+        // Sidebar tree switching
+        $(document).on('click', '.sidebar-tree-item', function() {
+            var idx = parseInt($(this).data('index'));
+            Syntree.Workspace.page.switchTree(idx);
+        });
+
+        // Sidebar tree remove
+        $(document).on('click', '.sidebar-tree-remove', function(e) {
+            e.stopPropagation();
+            var idx = parseInt($(this).closest('.sidebar-tree-item').data('index'));
+            Syntree.Workspace.page.removeTree(idx);
+        });
 
         // Uploading trees.
         if (this.upload_enabled) {
@@ -653,6 +681,40 @@ Syntree.Workspace = {
                 }
             });
         }
+    },
+
+    updateSidebar: function() {
+        var list = $('#tree-sidebar-list');
+        list.empty();
+        var trees = Syntree.Workspace.page.trees;
+        var active = Syntree.Workspace.page.treeIndex;
+        for (var i = 0; i < trees.length; i++) {
+            var root = trees[i].tree.getRoot();
+            var label = (root && root.getLabelContent()) ? root.getLabelContent() : 'Tree ' + (i + 1);
+            var li = $('<li>')
+                .addClass('sidebar-tree-item' + (i === active ? ' sidebar-tree-item--active' : ''))
+                .attr('data-index', i)
+                .text(label);
+            if (trees.length > 1) {
+                li.append($('<span>').addClass('sidebar-tree-remove').text('×'));
+            }
+            list.append(li);
+        }
+    },
+
+    _eventExportJSON: function() {
+        var fname = $('.modal_option__fname input').val() || 'workspace';
+        var data = [];
+        var trees = this.page.trees;
+        for (var i = 0; i < trees.length; i++) {
+            data.push(trees[i].tree.getTreestring());
+        }
+        var blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        var url = URL.createObjectURL(blob);
+        var a = $('<a>').attr({href: url, download: fname + '.json'}).appendTo('body');
+        a[0].click();
+        a.remove();
+        URL.revokeObjectURL(url);
     },
 
 }

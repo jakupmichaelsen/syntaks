@@ -6,9 +6,6 @@ Syntree.Page = function() {
 
     var wWidth = $('#workspace').width();
     var wHeight = $('#workspace').height();
-    /**
-     * The <rect> which is the background of the page.
-     */
     this.background = Syntree.snap.rect(
         -1 * wWidth,
         -1 * wHeight,
@@ -20,27 +17,13 @@ Syntree.Page = function() {
         id:'page-background',
     });
 
-    /**
-     * An SVG group of all elements on the page. Used for panning.
-     *
-     * @type {object}
-     *
-     * @see Syntree.Page#_enablePanning
-     */
     this.group = Syntree.snap.g();
 
-    /**
-     * All [Elements]{@link Syntree.Element} on the page, referenced by id.
-     *
-     * @type {object}
-     */
-    this.allElements = {};
+    // Multi-tree support: each entry = { tree, elements, group }
+    this.trees = [];
+    this.treeIndex = -1;
 
-    /**
-     * The currently selected [SelectableElement]{@link Syntree.SelectableElement}.
-     *
-     * @type {Syntree.SelectableElement}
-     */
+    this.allElements = {};
     this.selectedElement = undefined;
 
     this._enablePanning();
@@ -76,11 +59,16 @@ Syntree.Page.prototype.register = function(element) {
     element = Syntree.Lib.checkArg(element, element.isElement);
 
     this.allElements[element.getId()] = element;
+    // Also register in active tree's element map
+    if (this.treeIndex >= 0) {
+        this.trees[this.treeIndex].elements[element.getId()] = element;
+    }
+    var targetGroup = (this.treeIndex >= 0) ? this.trees[this.treeIndex].group : this.group;
     for (l in element.graphic.getAllEls()) {
         var el = element.graphic.getAllEls()[l];
         var el_obj = el.el_obj;
-        if (typeof el_obj.paper !== 'undefined') { // Ensure is a Snap Element
-            this.group.add(el_obj);
+        if (typeof el_obj.paper !== 'undefined') {
+            targetGroup.add(el_obj);
         }
     }
 }
@@ -227,39 +215,68 @@ Syntree.Page.prototype.createMovementArrow = function(node) {
  * @param {Syntree.Node} [parent] - the Node to which the root of the Tree will be added
  * @param {number} [index=0] - the index at which to add the root of Tree
  */
-Syntree.Page.prototype.addTree = function(tree,parent,index) {
+Syntree.Page.prototype.addTree = function(tree, parent, index) {
     tree = Syntree.Lib.checkArg(tree, 'tree', '#undefined');
     parent = Syntree.Lib.checkArg(parent, 'node', '#undefined');
     index = Syntree.Lib.checkArg(index, 'number', 0);
 
+    // Create a new per-tree group
+    var treeGroup = Syntree.snap.g();
+    this.group.add(treeGroup);
+
+    var slot = { tree: null, elements: {}, group: treeGroup };
+    this.trees.push(slot);
+    this.treeIndex = this.trees.length - 1;
+    this.allElements = slot.elements;
+
     if (!Syntree.Lib.checkType(tree, 'tree')) {
-        // Default tree
         var root = new Syntree.Node({
             x: $('#workspace').width() / 2,
             y: $('#toolbar').height() + 20,
             labelContent: 'S',
         });
-        this.tree = new Syntree.Tree({
-            // build_treestring: 'id:612|children:40,266|parent:undefined|labelContent:S|;id:40|children:undefined|parent:612|labelContent:Q|;id:266|children:460,170|parent:612|labelContent:Q|;id:460|children:911,884|parent:266|labelContent:Qlsfdksdfasdf|;id:911|children:undefined|parent:460|labelContent:Q|;id:884|children:undefined|parent:460|labelContent:Q|;id:170|children:undefined|parent:266|labelContent:Q|;',
-            // build_treestring: 'id:47|children:336,250|parent:undefined|labelContent:S|;id:336|children:570,175|parent:47|labelContent:Q|;id:570|children:838,146|parent:336|labelContent:O|;id:838|children:126,716|parent:570|labelContent:C|;id:126|children:538|parent:838|labelContent:E|;id:538|children:undefined|parent:126|labelContent:B|;id:716|children:undefined|parent:838|labelContent:X|;id:146|children:911,337|parent:570|labelContent:V|;id:911|children:undefined|parent:146|labelContent:G|;id:337|children:undefined|parent:146|labelContent:H|;id:175|children:883,866|parent:336|labelContent:A|;id:883|children:956,748|parent:175|labelContent:R|;id:956|children:undefined|parent:883|labelContent:S|;id:748|children:undefined|parent:883|labelContent:U|;id:866|children:391,578|parent:175|labelContent:T|;id:391|children:undefined|parent:866|labelContent:K|;id:578|children:undefined|parent:866|labelContent:N|;id:250|children:8,863|parent:47|labelContent:Z|;id:8|children:483,514|parent:250|labelContent:x|;id:483|children:109,271|parent:8|labelContent:Z|;id:109|children:undefined|parent:483|labelContent:Y|;id:271|children:undefined|parent:483|labelContent:I|;id:514|children:378,168|parent:8|labelContent:P|;id:378|children:undefined|parent:514|labelContent:B|;id:168|children:undefined|parent:514|labelContent:V|;id:863|children:564,746|parent:250|labelContent:L|;id:564|children:300,349|parent:863|labelContent:K|;id:300|children:undefined|parent:564|labelContent:J|;id:349|children:undefined|parent:564|labelContent:F|;id:746|children:766,805|parent:863|labelContent:M|;id:766|children:undefined|parent:746|labelContent:W|;id:805|children:undefined|parent:746|labelContent:Q|;',
-            // build_treestring: 'id:432|children:67,741|parent:undefined|labelContent:S|;id:67|children:undefined|parent:432|labelContent:Q|;id:741|children:578|parent:432|labelContent:Q|;id:578|children:737|parent:741|labelContent:Q|;id:737|children:0|parent:578|labelContent:Q|;id:0|children:61|parent:737|labelContent:Q|;id:61|children:134|parent:0|labelContent:Q|;id:134|children:undefined|parent:61|labelContent:[OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO]|;',
-            root: root,
-        });
+        this.tree = new Syntree.Tree({ root: root });
         this.tree.root.editingAction('save');
     } else {
         if (!Syntree.Lib.checkType(parent, 'node')) {
-            this.tree.delete();
             this.tree = tree;
             tree.distribute();
         } else {
             index = Syntree.Lib.checkArg(index, 'number', 0);
             parent.addChild(tree.root, index);
-            var temp = new Syntree.Tree({
-                root: parent,
-            });
+            var temp = new Syntree.Tree({ root: parent });
             temp.distribute();
         }
     }
+    slot.tree = this.tree;
+    Syntree.Workspace.updateSidebar();
+}
+
+Syntree.Page.prototype.switchTree = function(index) {
+    if (index < 0 || index >= this.trees.length || index === this.treeIndex) return;
+    // Hide current
+    if (this.treeIndex >= 0) {
+        this.trees[this.treeIndex].group.attr({ display: 'none' });
+    }
+    this.treeIndex = index;
+    var slot = this.trees[index];
+    slot.group.attr({ display: '' });
+    this.tree = slot.tree;
+    this.allElements = slot.elements;
+    this.selectedElement = undefined;
+    this.select(this.tree.getRoot());
+    Syntree.Workspace.updateSidebar();
+}
+
+Syntree.Page.prototype.removeTree = function(index) {
+    if (this.trees.length <= 1) return; // keep at least one
+    var slot = this.trees[index];
+    slot.tree.delete();
+    slot.group.remove();
+    this.trees.splice(index, 1);
+    var newIndex = Math.min(index, this.trees.length - 1);
+    this.treeIndex = -1; // force switch
+    this.switchTree(newIndex);
 }
 
 /**

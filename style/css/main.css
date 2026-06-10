@@ -425,7 +425,57 @@ body.page_make {
 #workspace_container {
   border: 1px solid black;
   cursor: default !important;
-  position: relative; }
+  position: relative;
+  display: flex;
+  height: 100%; }
+
+#tree-sidebar {
+  width: 160px;
+  min-width: 160px;
+  background: #f0f0f0;
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; }
+  #tree-sidebar .sidebar_header {
+    padding: 8px 10px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #ccc;
+    background: #e4e4e4; }
+  #tree-sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex: 1; }
+  #tree-sidebar-list .sidebar-tree-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd; }
+  #tree-sidebar-list .sidebar-tree-item:hover {
+    background: #ddd; }
+  #tree-sidebar-list .sidebar-tree-item--active {
+    background: #cce0ff;
+    font-weight: bold; }
+  #tree-sidebar-list .sidebar-tree-remove {
+    color: #999;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0 2px; }
+  #tree-sidebar-list .sidebar-tree-remove:hover {
+    color: #c00; }
+
+#workspace_panel {
+  flex: 1;
+  position: relative;
+  overflow: hidden; }
+
+
   #workspace_container .editor, #workspace_container .node-label {
     text-align: center;
     font-size: 14px;
