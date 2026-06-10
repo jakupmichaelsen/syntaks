@@ -541,34 +541,26 @@ Syntree.Workspace = {
     _eventExportTreeFile: function() {
         var fname = $('.modal_option__fname input').val();
         var treestring = this.page.tree.getTreestring();
-        if (Syntree.Lib.checkType(this.export_tree_script, 'string')) {
-            $.post(this.export_tree_script, {fname: fname, type: 'tree-file', treestring: treestring}, function(link){
-                $('body').append(link);
-                $('#temp-file-download')[0].click();
-                $('#temp-file-download').remove();
-            })
-
-        }
+        var blob = new Blob([treestring], {type: 'text/plain'});
+        var url = URL.createObjectURL(blob);
+        var a = $('<a>').attr({href: url, download: fname + '.tree'}).appendTo('body');
+        a[0].click();
+        a.remove();
+        URL.revokeObjectURL(url);
     },
 
     /**
      * Code for exporting the current tree as bracket notation (.txt file).
      */
     _eventExportBrackets: function() {
-        $('.loading-icon').show();
-        // Get fname
         var fname = $('.modal_option__fname input').val();
-        // Get brackets
         var brackets = this.page.tree.getBracketNotation();
-        // Post it
-        if (Syntree.Lib.checkType(this.export_tree_script, 'string')) {
-            $.post(this.export_tree_script, {fname: fname, type: 'bracket-file', brackets: brackets}, function(link) {
-                $('body').append(link);
-                $('#temp-file-download')[0].click();
-                $('#temp-file-download').remove();
-                $('.loading-icon').hide();
-            });
-        }
+        var blob = new Blob([brackets], {type: 'text/plain'});
+        var url = URL.createObjectURL(blob);
+        var a = $('<a>').attr({href: url, download: fname + '.txt'}).appendTo('body');
+        a[0].click();
+        a.remove();
+        URL.revokeObjectURL(url);
     },
 
     /**
