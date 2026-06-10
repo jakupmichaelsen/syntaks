@@ -28,7 +28,7 @@
 <body class="page_make">
     <div id='workspace_container'>
         <aside id='tree-sidebar'>
-            <div class='sidebar_header'>Trees</div>
+            <div class='sidebar_header'>Trees <button class='sidebar-new-tree' onclick='Syntree.Workspace.page.addTree(); Syntree.Workspace.page.select(Syntree.Workspace.page.tree.getRoot());'>+</button></div>
             <ul id='tree-sidebar-list'></ul>
         </aside>
         <div id='workspace_panel'>
@@ -78,8 +78,7 @@
             <div class='overlay' overlay-id='app'>
             </div>
             <ul id='toolbar'>
-                <li class='toolbar_button toolbar_button__new-tree'>New Tree</li>
-                <li class='toolbar_button toolbar_button__new-project'>New Project</li>
+                <li class='toolbar_button toolbar_button__new-project'>New</li>
                 <li class='toolbar_button toolbar_button__export modal_trigger' for-modal='export'>Save</li>
                 <li class='toolbar_button toolbar_button__upload'>Load</li>
                 <span class='toolbar_area toolbar_area_right'>
