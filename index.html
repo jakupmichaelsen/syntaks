@@ -1,837 +1,488 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>syntaks v7 — wrapped sentence node</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>syntaks v10 sentence root + top editor</title>
 <style>
-  :root{
-    --bg:#282828;
-    --bg2:#1d2021;
-    --panel:#32302f;
-    --soft:#3c3836;
-    --text:#ebdbb2;
-    --muted:#a89984;
-    --line:#928374;
-    --accent:#fabd2f;
-    --green:#b8bb26;
-    --red:#fb4934;
-    --blue:#83a598;
-    --node:#282828;
-    --node-active:#3c3836;
-  }
-  *{ box-sizing:border-box; }
-  html,body{ height:100%; margin:0; overflow:hidden; background:var(--bg); color:var(--text); font:15px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; }
-  button,input,textarea{ font:inherit; color:inherit; }
-  button{ background:transparent; border:0; color:var(--muted); cursor:pointer; padding:2px 4px; border-radius:2px; }
-  button:hover,button:focus{ color:var(--accent); outline:1px solid var(--soft); }
-  button.danger:hover{ color:var(--red); }
-  input,textarea{ width:100%; background:var(--bg2); border:1px solid var(--soft); color:var(--text); padding:6px 8px; outline:none; }
-  input:focus,textarea:focus{ border-color:var(--accent); }
-  .app{ height:100%; display:grid; grid-template-columns:320px 1fr; }
-  aside{ border-right:1px solid var(--soft); background:var(--bg2); min-width:0; display:flex; flex-direction:column; }
-  header{ padding:12px; border-bottom:1px solid var(--soft); }
-  h1{ font-size:16px; margin:0 0 10px; color:var(--accent); font-weight:700; }
-  .row{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-  .row.nowrap{ flex-wrap:nowrap; }
-  .tiny{ font-size:12px; color:var(--muted); }
-  .toolbar{ padding:8px 12px; border-bottom:1px solid var(--soft); display:flex; gap:8px; flex-wrap:wrap; }
-  .tree-list{ overflow:auto; flex:1; padding:8px; }
-  .item{ border:1px solid transparent; padding:8px; margin-bottom:6px; cursor:pointer; border-radius:4px; color:var(--muted); }
-  .item:hover{ border-color:var(--soft); color:var(--text); }
-  .item.active{ border-color:var(--accent); color:var(--text); background:#32302f; }
-  .item-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .item-meta{ font-size:12px; color:var(--muted); margin-top:2px; }
-  main{ min-width:0; display:grid; grid-template-rows:auto 1fr auto; }
-  .topbar{ padding:10px 12px; border-bottom:1px solid var(--soft); background:var(--panel); display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; }
-  .topbar input{ background:var(--bg); }
-  .canvasbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .canvas-wrap{ position:relative; overflow:hidden; background:radial-gradient(circle at 1px 1px, #3c3836 1px, transparent 0) 0 0/24px 24px, var(--bg); touch-action:none; user-select:none; }
-  svg{ width:100%; height:100%; display:block; cursor:grab; }
-  svg.panning{ cursor:grabbing; }
-  .status{ padding:6px 12px; border-top:1px solid var(--soft); color:var(--muted); background:var(--bg2); display:flex; justify-content:space-between; gap:10px; }
-  .hidden-file{ display:none; }
-  .kbd{ color:var(--accent); }
-  .node rect{ fill:var(--node); stroke:var(--line); stroke-width:1.4; rx:4; }
-  .node text{ fill:var(--text); dominant-baseline:middle; text-anchor:middle; pointer-events:none; }
-  .node foreignObject{ overflow:visible; }
-  .node-edit{ width:100%; height:100%; background:var(--bg2); color:var(--text); border:1px solid var(--accent); border-radius:3px; text-align:center; padding:2px 6px; outline:none; resize:none; overflow:hidden; }
-  .node.active rect{ stroke:var(--accent); stroke-width:2.2; fill:var(--node-active); }
-  .node:hover rect{ stroke:var(--blue); }
-  .edge{ stroke:var(--line); stroke-width:1.4; fill:none; stroke-linecap:square; shape-rendering:crispEdges; }
-  .ghost{ opacity:.45; }
-  .notice{ padding:8px 12px; border-top:1px solid var(--soft); color:var(--muted); }
-  .notice strong{ color:var(--text); }
+:root{
+  --bg:#282828;--bg2:#32302f;--fg:#ebdbb2;--muted:#a89984;--line:#bdae93;
+  --border:#928374;--accent:#fabd2f;--green:#b8bb26;--red:#fb4934;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+button,input{font:inherit}
+.app{display:grid;grid-template-columns:280px 1fr;height:100vh}
+.sidebar{border-right:1px solid #504945;background:#1d2021;padding:14px;display:flex;flex-direction:column;gap:12px}
+.brand{font-size:14px;color:var(--accent);letter-spacing:.04em}
+.project-title{width:100%;background:transparent;color:var(--fg);border:1px solid #504945;border-radius:6px;padding:8px}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px}
+button{background:transparent;border:1px solid var(--border);color:var(--fg);border-radius:6px;padding:6px 8px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+.tree-list{display:flex;flex-direction:column;gap:6px;overflow:auto}
+.tree-item{border:1px solid #504945;border-radius:8px;padding:8px;cursor:pointer;color:var(--muted)}
+.tree-item.active{border-color:var(--accent);color:var(--fg);background:#282828}
+.hint{font-size:12px;color:var(--muted);line-height:1.45;margin-top:auto}
+.main{position:relative;display:grid;grid-template-rows:auto 1fr;background:
+  radial-gradient(circle at 20px 20px,#3c3836 1px,transparent 1px) 0 0/32px 32px,var(--bg)}
+.topbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid #3c3836;background:rgba(29,32,33,.92)}
+.editor-wrap{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(760px,calc(100% - 80px));z-index:5;display:flex;gap:8px;align-items:center;pointer-events:none}
+.editor-label{color:var(--muted);font-size:13px;white-space:nowrap}
+.top-editor{display:block;width:100%;min-width:240px;padding:8px 14px;border:1px solid #665c54;border-radius:7px;
+  background:rgba(60,56,54,.96);color:var(--fg);font-size:20px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:auto}
+.top-editor.editing{border-color:var(--accent);box-shadow:0 0 0 2px rgba(250,189,47,.18)}
+.top-editor:focus{outline:2px solid var(--accent);outline-offset:2px}
+.canvas{position:relative;overflow:hidden;touch-action:none;cursor:grab}
+.canvas.dragging{cursor:grabbing}
+.world{position:absolute;left:50%;top:190px;transform-origin:0 0}
+svg.lines{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.node{position:absolute;min-width:72px;padding:7px 12px;text-align:center;border:1px solid var(--border);border-radius:7px;
+  background:rgba(40,40,40,.96);color:var(--fg);box-shadow:0 1px 0 rgba(0,0,0,.5);user-select:none;cursor:pointer;white-space:nowrap}
+.node.root{min-width:260px;max-width:560px;white-space:normal;overflow-wrap:anywhere;font-size:20px;line-height:1.32;background:rgba(60,56,54,.96);border-color:#665c54}
+.node.word{border-color:transparent;background:transparent;color:var(--fg);box-shadow:none}
+.node.function{font-size:21px}
+.node.selected{outline:2px solid var(--accent);outline-offset:2px}
+.status{position:absolute;right:10px;bottom:8px;color:var(--muted);font-size:12px}
+.file-input{display:none}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside>
-    <header>
-      <h1>syntaks <span class="tiny">v7 wrapped sentence node</span></h1>
-      <input id="projectTitle" placeholder="Project title" />
-      <div class="row" style="margin-top:8px">
-        <button id="newProject">new</button>
-        <button id="openProject">open json</button>
-        <button id="saveProject">save json</button>
-      </div>
-      <input class="hidden-file" id="fileInput" type="file" accept="application/json,.json" />
-    </header>
+  <aside class="sidebar">
+    <div class="brand">syntaks v10 · sentence root + top editor</div>
+    <input id="projectTitle" class="project-title" value="Basic notation examples" aria-label="Project title">
     <div class="toolbar">
-      <button id="addTree">+ sentence</button>
-      <button id="duplicateTree">duplicate</button>
-      <button id="deleteTree" class="danger">delete</button>
+      <button id="newTree">+ tree</button>
+      <button id="deleteTree">delete</button>
+      <button id="openBtn">open JSON</button>
+      <button id="saveBtn">save JSON</button>
+      <input id="fileInput" class="file-input" type="file" accept="application/json,.json">
     </div>
     <div id="treeList" class="tree-list"></div>
-    <div class="notice tiny">
-      <strong>Canvas:</strong> drag background to pan, wheel to zoom, drag nodes to move.<br>
-      <strong>Keys:</strong> <span class="kbd">←↑↓→</span> navigate, <span class="kbd">Enter</span> edit, <span class="kbd">C</span> child, <span class="kbd">S</span> sibling, <span class="kbd">Del</span> delete.
+    <div class="hint">
+      <b>Editing model:</b><br>
+      The sentence is again the first visible/root node.<br><br>
+      Select any node, then press <b>Enter</b> or <b>F2</b> to edit it in the top box.
+      Press Enter to apply. Esc cancels.
     </div>
   </aside>
-  <main>
+  <main class="main">
     <div class="topbar">
-      <input id="sentenceTitle" placeholder="Sentence / tree title" />
-      <div class="canvasbar">
-        <button id="addRoot">root</button>
-        <button id="addChild">child</button>
-        <button id="addSibling">sibling</button>
-        <button id="deleteNode" class="danger">delete node</button>
-        <button id="fitView">fit</button>
-        <button id="resetView">reset</button>
-        <button id="zoomIn">+</button>
-        <button id="zoomOut">−</button>
+      <button id="addChild">add child</button>
+      <button id="addSibling">add sibling</button>
+      <button id="deleteNode">delete node</button>
+      <button id="fit">fit</button>
+      <button id="reset">reset</button>
+      <button id="zoomIn">+</button>
+      <button id="zoomOut">−</button>
+    </div>
+
+    <div class="editor-wrap">
+      <div class="editor-label">edit</div>
+      <input id="topEditor" class="top-editor" spellcheck="false" value="" placeholder="Select a node, then press Enter or F2">
+    </div>
+
+    <div id="canvas" class="canvas">
+      <div id="world" class="world">
+        <svg id="lines" class="lines"></svg>
+        <div id="nodes"></div>
       </div>
     </div>
-    <div id="canvasWrap" class="canvas-wrap">
-      <svg id="svg" xmlns="http://www.w3.org/2000/svg">
-        <g id="viewport"></g>
-      </svg>
-    </div>
-    <div class="status tiny">
-      <span id="statusLeft"></span>
-      <span id="statusRight"></span>
-    </div>
+    <div id="status" class="status">v10-sentence-root-top-editor · ready</div>
   </main>
 </div>
+
 <script>
-(() => {
-  'use strict';
+const LS_KEY = "syntaks-v10-sentence-root-top-editor";
+const uid = () => Math.random().toString(36).slice(2,9);
 
-  const STORAGE_KEY = 'syntaks.minimal.project.v7';
-  const $ = (id) => document.getElementById(id);
-  const svg = $('svg');
-  const viewport = $('viewport');
-  const canvasWrap = $('canvasWrap');
+let project = {
+  version: 1,
+  title: "Basic notation examples",
+  trees: [
+    makeTree("De fleste elever er meget flittige.", [
+      ["S","de fleste elever"], ["V","er"], ["A","meget"], ["SP","flittige"]
+    ]),
+    makeTree("Drengen køber slik.", [
+      ["S","drengen"], ["V","køber"], ["DO","slik"]
+    ]),
+    makeTree("Endelig ankommer toget.", [
+      ["A","endelig"], ["V","ankommer"], ["S","toget"]
+    ]),
+    makeTree("Borgmesteren giver Dronningen hånden.", [
+      ["S","borgmesteren"], ["V","giver"], ["IO","dronningen"], ["DO","hånden"]
+    ])
+  ]
+};
 
-  const state = {
-    project: defaultProject(),
-    activeTreeId: null,
-    selectedNodeId: null,
-    view: { x: 0, y: 0, scale: 1 },
-    editingNodeId: null,
-    editDraft: '',
-    drag: null,
-    suppressClick: false
-  };
+let activeTreeId = project.trees[0].id;
+let selectedNodeId = null;
+let view = {x:0,y:0,scale:1};
+let draggingNode = null;
+let draggingCanvas = null;
 
-  function uid(prefix='id') {
-    return `${prefix}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36).slice(-4)}`;
-  }
-
-  function defaultTree(title='New sentence') {
-    const root = uid('node');
-    return {
-      id: uid('tree'),
-      title,
-      nodes: [{ id: root, label: 'S', x: 0, y: 0, parentId: null }]
-    };
-  }
-
-  function makeExampleTree(id, title, nodes) {
-    return {
-      id,
-      title,
-      nodes: nodes.map(n => ({
-        id: `${id}-${n[0]}`,
-        label: n[1],
-        x: n[2],
-        y: n[3],
-        parentId: n[4] == null ? null : `${id}-${n[4]}`
-      }))
-    };
-  }
-
-  function defaultProject() {
-    return {
-      version: 1,
-      title: 'Syntaksøvelse — grundled, udsagnsled, genstandsled osv.',
-      trees: [
-        makeExampleTree('tree-drengen-gabte', 'Drengen gabte.', [
-          ['root', 'Drengen gabte.', 0, -190, null],
-          ['s', 'S', -90, -70, 'root'],
-          ['v', 'V', 90, -70, 'root'],
-          ['w1', 'drengen', -90, 55, 's'],
-          ['w2', 'gabte', 90, 55, 'v']
-        ]),
-        makeExampleTree('tree-borgmesteren-giver', 'Borgmesteren giver Dronningen hånden.', [
-          ['root', 'Borgmesteren giver Dronningen hånden.', 0, -205, null],
-          ['s', 'S', -225, -75, 'root'],
-          ['v', 'V', -75, -75, 'root'],
-          ['io', 'IO', 80, -75, 'root'],
-          ['do', 'DO', 235, -75, 'root'],
-          ['w1', 'borgmesteren', -225, 55, 's'],
-          ['w2', 'giver', -75, 55, 'v'],
-          ['w3', 'dronningen', 80, 55, 'io'],
-          ['w4', 'hånden', 235, 55, 'do']
-        ]),
-        makeExampleTree('tree-drengen-koeber', 'Drengen køber slik.', [
-          ['root', 'Drengen køber slik.', 0, -190, null],
-          ['s', 'S', -150, -70, 'root'],
-          ['v', 'V', 0, -70, 'root'],
-          ['do', 'DO', 150, -70, 'root'],
-          ['w1', 'drengen', -150, 55, 's'],
-          ['w2', 'køber', 0, 55, 'v'],
-          ['w3', 'slik', 150, 55, 'do']
-        ]),
-        makeExampleTree('tree-endelig-ankommer', 'Endelig ankommer toget.', [
-          ['root', 'Endelig ankommer toget.', 0, -190, null],
-          ['a', 'A', -150, -70, 'root'],
-          ['v', 'V', 0, -70, 'root'],
-          ['s', 'S', 150, -70, 'root'],
-          ['w1', 'endelig', -150, 55, 'a'],
-          ['w2', 'ankommer', 0, 55, 'v'],
-          ['w3', 'toget', 150, 55, 's']
-        ]),
-        makeExampleTree('tree-uheldigvis-tabte', 'Uheldigvis tabte Michael mælken.', [
-          ['root', 'Uheldigvis tabte Michael mælken.', 0, -205, null],
-          ['a', 'A', -225, -75, 'root'],
-          ['v', 'V', -75, -75, 'root'],
-          ['s', 'S', 80, -75, 'root'],
-          ['do', 'DO', 235, -75, 'root'],
-          ['w1', 'uheldigvis', -225, 55, 'a'],
-          ['w2', 'tabte', -75, 55, 'v'],
-          ['w3', 'Michael', 80, 55, 's'],
-          ['w4', 'mælken', 235, 55, 'do']
-        ]),
-        makeExampleTree('tree-de-fleste-elever', 'De fleste elever er meget flittige.', [
-          ['root', 'De fleste elever er meget flittige.', 0, -205, null],
-          ['s', 'S', -225, -75, 'root'],
-          ['v', 'V', -75, -75, 'root'],
-          ['a', 'A', 80, -75, 'root'],
-          ['sp', 'SP', 235, -75, 'root'],
-          ['w1', 'de fleste elever', -225, 55, 's'],
-          ['w2', 'er', -75, 55, 'v'],
-          ['w3', 'meget', 80, 55, 'a'],
-          ['w4', 'flittige', 235, 55, 'sp']
-        ])
-      ]
-    };
-  }
-
-  function activeTree() {
-    return state.project.trees.find(t => t.id === state.activeTreeId) || null;
-  }
-
-  function selectedNode() {
-    const t = activeTree();
-    return t ? t.nodes.find(n => n.id === state.selectedNodeId) || null : null;
-  }
-
-  function childrenOf(tree, nodeId) {
-    return tree.nodes.filter(n => n.parentId === nodeId);
-  }
-
-  function getNode(tree, id) {
-    return tree.nodes.find(n => n.id === id) || null;
-  }
-
-  function normalizeProject(raw) {
-    if (Array.isArray(raw)) {
-      return {
-        version: 1,
-        title: 'Imported project',
-        trees: raw.map((item, i) => defaultTreeFromLegacy(item, `Tree ${i + 1}`))
-      };
-    }
-    if (!raw || typeof raw !== 'object') throw new Error('Not a JSON object.');
-    const project = {
-      version: Number(raw.version || 1),
-      title: String(raw.title || 'Untitled project'),
-      trees: Array.isArray(raw.trees) ? raw.trees.map((tree, i) => normalizeTree(tree, i)) : []
-    };
-    if (!project.trees.length) project.trees.push(defaultTree('New sentence'));
-    return project;
-  }
-
-  function defaultTreeFromLegacy(item, title) {
-    // Minimal fallback for old array exports: preserve the old string as a note-like root label.
-    const t = defaultTree(title);
-    t.legacyTreeString = String(item || '');
-    t.nodes[0].label = 'S';
-    return t;
-  }
-
-  function normalizeTree(tree, index) {
-    const out = {
-      id: String(tree.id || uid('tree')),
-      title: String(tree.title || `Tree ${index + 1}`),
-      nodes: Array.isArray(tree.nodes) ? tree.nodes.map(normalizeNode).filter(Boolean) : []
-    };
-    if (!out.nodes.length) out.nodes = defaultTree(out.title).nodes;
-    if (!out.nodes.some(n => n.parentId === null)) out.nodes[0].parentId = null;
-    return out;
-  }
-
-  function normalizeNode(n) {
-    if (!n || typeof n !== 'object') return null;
-    return {
-      id: String(n.id || uid('node')),
-      label: String(n.label ?? ''),
-      x: Number.isFinite(Number(n.x)) ? Number(n.x) : 0,
-      y: Number.isFinite(Number(n.y)) ? Number(n.y) : 0,
-      parentId: n.parentId == null ? null : String(n.parentId)
-    };
-  }
-
-  function saveLocal() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.project));
-    updateStatus('autosaved');
-  }
-
-  function updateStatus(msg='') {
-    const t = activeTree();
-    $('statusLeft').textContent = t ? `${state.project.trees.indexOf(t) + 1}/${state.project.trees.length} · ${t.nodes.length} nodes${msg ? ' · ' + msg : ''}` : 'no tree';
-    $('statusRight').textContent = `v7-wrapped-sentence · zoom ${Math.round(state.view.scale * 100)}%`;
-  }
-
-  function renderAll() {
-    $('projectTitle').value = state.project.title;
-    const t = activeTree();
-    $('sentenceTitle').value = t ? t.title : '';
-    renderList();
-    renderCanvas();
-    updateStatus();
-  }
-
-  function renderList() {
-    const list = $('treeList');
-    list.innerHTML = '';
-    state.project.trees.forEach((tree, i) => {
-      const div = document.createElement('div');
-      div.className = `item${tree.id === state.activeTreeId ? ' active' : ''}`;
-      div.innerHTML = `<div class="item-title"></div><div class="item-meta"></div>`;
-      div.querySelector('.item-title').textContent = `${i + 1}. ${tree.title || 'Untitled'}`;
-      div.querySelector('.item-meta').textContent = `${tree.nodes.length} nodes`;
-      div.addEventListener('click', () => {
-        state.activeTreeId = tree.id;
-        state.selectedNodeId = tree.nodes[0]?.id || null;
-        renderAll();
-        saveLocal();
-      });
-      list.appendChild(div);
-    });
-  }
-
-  function svgEl(name, attrs = {}) {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', name);
-    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-    return el;
-  }
-
-  function appendLine(group, x1, y1, x2, y2) {
-    group.appendChild(svgEl('line', {
-      class: 'edge',
-      x1: Math.round(x1),
-      y1: Math.round(y1),
-      x2: Math.round(x2),
-      y2: Math.round(y2)
-    }));
-  }
-
-  function isSentenceNode(tree, node) {
-    return node.parentId == null;
-  }
-
-  function wrapLabel(label, maxChars) {
-    const words = String(label || '…').trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return ['…'];
-    const lines = [];
-    let line = '';
-    words.forEach(word => {
-      if (!line) {
-        line = word;
-      } else if ((line + ' ' + word).length <= maxChars) {
-        line += ' ' + word;
-      } else {
-        lines.push(line);
-        line = word;
-      }
-    });
-    if (line) lines.push(line);
-    return lines;
-  }
-
-  function nodeBox(tree, node) {
-    const sentence = isSentenceNode(tree, node);
-    const maxWidth = sentence ? 420 : 260;
-    const minWidth = sentence ? 160 : 48;
-    const maxChars = sentence ? 42 : 28;
-    const lines = sentence ? wrapLabel(node.label, maxChars) : [node.label || '…'];
-    const longest = Math.max(...lines.map(line => line.length), 1);
-    const width = Math.max(minWidth, Math.min(maxWidth, longest * 8 + 30));
-    const height = sentence ? Math.max(40, lines.length * 18 + 18) : 40;
-    return { width, height, lines };
-  }
-
-  function drawTreeEdges(tree, group) {
-    const parents = tree.nodes.filter(n => childrenOf(tree, n.id).length);
-    parents.forEach(parent => {
-      const pBox = nodeBox(tree, parent);
-      const kids = childrenOf(tree, parent.id).sort((a, b) => a.x - b.x);
-      kids.forEach(kid => {
-        const kBox = nodeBox(tree, kid);
-        appendLine(group, parent.x, parent.y + pBox.height / 2, kid.x, kid.y - kBox.height / 2);
-      });
-    });
-  }
-
-  function renderCanvas() {
-    viewport.innerHTML = '';
-    applyView();
-    const t = activeTree();
-    if (!t) return;
-
-    const edges = svgEl('g');
-    const nodes = svgEl('g');
-    viewport.append(edges, nodes);
-
-    drawTreeEdges(t, edges);
-
-    t.nodes.forEach(n => {
-      const box = nodeBox(t, n);
-      const { width, height, lines } = box;
-      const g = svgEl('g', { class: `node${n.id === state.selectedNodeId ? ' active' : ''}`, transform: `translate(${n.x},${n.y})`, 'data-id': n.id });
-      g.appendChild(svgEl('rect', { x: -width / 2, y: -height / 2, width, height }));
-      if (state.editingNodeId === n.id) {
-        const fo = svgEl('foreignObject', { x: -width / 2 + 4, y: -height / 2 + 4, width: width - 8, height: height - 8 });
-        const input = isSentenceNode(t, n) ? document.createElement('textarea') : document.createElement('input');
-        input.className = 'node-edit';
-        input.value = state.editDraft;
-        input.setAttribute('aria-label', 'Node label');
-        input.addEventListener('pointerdown', ev => ev.stopPropagation());
-        input.addEventListener('input', ev => { state.editDraft = ev.target.value; });
-        input.addEventListener('keydown', ev => {
-          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commitNodeEdit(); }
-          if (ev.key === 'Escape') { ev.preventDefault(); cancelNodeEdit(); }
-        });
-        input.addEventListener('blur', commitNodeEdit);
-        fo.appendChild(input);
-        g.appendChild(fo);
-        requestAnimationFrame(() => { input.focus(); input.select(); });
-      } else {
-        const text = svgEl('text', { x: 0, y: 1 });
-        const lineHeight = 18;
-        const startY = -((lines.length - 1) * lineHeight) / 2 + 1;
-        lines.forEach((line, index) => {
-          const tspan = svgEl('tspan', { x: 0, y: startY + index * lineHeight });
-          tspan.textContent = line;
-          text.appendChild(tspan);
-        });
-        g.appendChild(text);
-      }
-      g.addEventListener('pointerdown', nodePointerDown);
-      g.addEventListener('dblclick', () => beginNodeEdit(n.id));
-      nodes.appendChild(g);
-    });
-  }
-
-  function applyView() {
-    viewport.setAttribute('transform', `translate(${state.view.x} ${state.view.y}) scale(${state.view.scale})`);
-  }
-
-  function clientToWorld(clientX, clientY) {
-    const rect = svg.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left - state.view.x) / state.view.scale,
-      y: (clientY - rect.top - state.view.y) / state.view.scale
-    };
-  }
-
-  function addTree() {
-    const t = defaultTree('New sentence');
-    state.project.trees.push(t);
-    state.activeTreeId = t.id;
-    state.selectedNodeId = t.nodes[0].id;
-    renderAll();
-    saveLocal();
-    $('sentenceTitle').focus();
-    $('sentenceTitle').select();
-  }
-
-  function duplicateTree() {
-    const t = activeTree();
-    if (!t) return;
-    const copy = JSON.parse(JSON.stringify(t));
-    const idMap = new Map();
-    copy.id = uid('tree');
-    copy.title = `${copy.title} copy`;
-    copy.nodes.forEach(n => { const old = n.id; n.id = uid('node'); idMap.set(old, n.id); });
-    copy.nodes.forEach(n => { if (n.parentId) n.parentId = idMap.get(n.parentId) || null; });
-    state.project.trees.push(copy);
-    state.activeTreeId = copy.id;
-    state.selectedNodeId = copy.nodes[0]?.id || null;
-    renderAll();
-    saveLocal();
-  }
-
-  function deleteTree() {
-    if (state.project.trees.length <= 1) {
-      alert('Keep at least one tree in the project.');
-      return;
-    }
-    const t = activeTree();
-    if (!t || !confirm(`Delete "${t.title}"?`)) return;
-    const index = state.project.trees.indexOf(t);
-    state.project.trees.splice(index, 1);
-    const next = state.project.trees[Math.max(0, index - 1)];
-    state.activeTreeId = next.id;
-    state.selectedNodeId = next.nodes[0]?.id || null;
-    renderAll();
-    saveLocal();
-  }
-
-  function addRootIfNeeded() {
-    const t = activeTree();
-    if (!t) return;
-    if (t.nodes.some(n => n.parentId === null)) return;
-    const n = { id: uid('node'), label: 'S', x: 0, y: 0, parentId: null };
-    t.nodes.push(n);
-    state.selectedNodeId = n.id;
-    renderAll();
-    saveLocal();
-  }
-
-  function addChild() {
-    const t = activeTree();
-    const parent = selectedNode();
-    if (!t || !parent) return;
-    const siblings = childrenOf(t, parent.id);
-    const offset = (siblings.length - 0.5) * 110;
-    const n = { id: uid('node'), label: 'node', x: parent.x + offset, y: parent.y + 95, parentId: parent.id };
-    t.nodes.push(n);
-    state.selectedNodeId = n.id;
-    renderAll();
-    saveLocal();
-    beginNodeEdit(n.id);
-  }
-
-  function addSibling() {
-    const t = activeTree();
-    const n = selectedNode();
-    if (!t || !n || !n.parentId) return;
-    const siblings = childrenOf(t, n.parentId);
-    const newNode = { id: uid('node'), label: 'node', x: n.x + 115, y: n.y, parentId: n.parentId };
-    t.nodes.push(newNode);
-    // spread siblings gently so the new node does not sit on top of old ones
-    siblings.concat(newNode).forEach((s, i, arr) => {
-      const center = arr.reduce((sum, item) => sum + item.x, 0) / arr.length;
-      s.x = center + (i - (arr.length - 1) / 2) * 115;
-    });
-    state.selectedNodeId = newNode.id;
-    renderAll();
-    saveLocal();
-    beginNodeEdit(newNode.id);
-  }
-
-  function deleteNode() {
-    const t = activeTree();
-    const n = selectedNode();
-    if (!t || !n) return;
-    if (n.parentId === null && t.nodes.length > 1) {
-      alert('Delete child nodes first, or keep the root.');
-      return;
-    }
-    const toDelete = new Set();
-    const collect = (id) => {
-      toDelete.add(id);
-      childrenOf(t, id).forEach(ch => collect(ch.id));
-    };
-    collect(n.id);
-    t.nodes = t.nodes.filter(node => !toDelete.has(node.id));
-    state.selectedNodeId = t.nodes[0]?.id || null;
-    renderAll();
-    saveLocal();
-  }
-
-  function sortedSiblings(tree, node) {
-    return tree.nodes
-      .filter(n => n.parentId === node.parentId)
-      .sort((a, b) => a.x - b.x || a.y - b.y);
-  }
-
-  function selectNode(id) {
-    if (!id) return;
-    state.selectedNodeId = id;
-    renderCanvas();
-    updateStatus();
-  }
-
-  function navigateNode(direction) {
-    const t = activeTree();
-    const n = selectedNode();
-    if (!t || !n) return;
-
-    if (direction === 'up') {
-      if (n.parentId) selectNode(n.parentId);
-      return;
-    }
-
-    if (direction === 'down') {
-      const kids = childrenOf(t, n.id).sort((a, b) => Math.abs(a.x - n.x) - Math.abs(b.x - n.x) || a.x - b.x);
-      if (kids[0]) selectNode(kids[0].id);
-      return;
-    }
-
-    const siblings = sortedSiblings(t, n);
-    const index = siblings.findIndex(s => s.id === n.id);
-    if (direction === 'left' && index > 0) selectNode(siblings[index - 1].id);
-    if (direction === 'right' && index >= 0 && index < siblings.length - 1) selectNode(siblings[index + 1].id);
-  }
-
-  function beginNodeEdit(id) {
-    const t = activeTree();
-    const n = t && getNode(t, id);
-    if (!n) return;
-    state.selectedNodeId = n.id;
-    state.editingNodeId = n.id;
-    state.editDraft = n.label || '';
-    renderCanvas();
-  }
-
-  function commitNodeEdit() {
-    if (!state.editingNodeId) return;
-    const t = activeTree();
-    const n = t && getNode(t, state.editingNodeId);
-    if (n) n.label = state.editDraft.trim() || '…';
-    state.editingNodeId = null;
-    state.editDraft = '';
-    renderCanvas();
-    saveLocal();
-  }
-
-  function cancelNodeEdit() {
-    state.editingNodeId = null;
-    state.editDraft = '';
-    renderCanvas();
-  }
-
-  function nodePointerDown(e) {
-    e.stopPropagation();
-    if (e.target.closest && e.target.closest('.node-edit')) return;
-    if (state.editingNodeId) commitNodeEdit();
-    const t = activeTree();
-    const node = t && getNode(t, e.currentTarget.dataset.id);
-    if (!node) return;
-    state.selectedNodeId = node.id;
-    const world = clientToWorld(e.clientX, e.clientY);
-    state.drag = { type: 'node', id: node.id, dx: node.x - world.x, dy: node.y - world.y, moved: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
-    renderCanvas();
-  }
-
-  svg.addEventListener('pointerdown', (e) => {
-    if (e.target.closest && e.target.closest('.node')) return;
-    if (state.editingNodeId) commitNodeEdit();
-    state.drag = { type: 'pan', startX: e.clientX, startY: e.clientY, viewX: state.view.x, viewY: state.view.y, moved: false };
-    svg.classList.add('panning');
-    svg.setPointerCapture(e.pointerId);
+function makeTree(sentence, pairs){
+  const root = "root-" + uid();
+  const nodes = [{id:root,label:sentence,x:0,y:-55,parentId:null,kind:"root"}];
+  const spacing = Math.max(130, 520 / Math.max(1, pairs.length-1));
+  const start = -spacing * (pairs.length-1) / 2;
+  pairs.forEach((p,i)=>{
+    const f = "fn-" + uid(), w = "wd-" + uid();
+    const x = start + i * spacing;
+    nodes.push({id:f,label:p[0],x:x,y:85,parentId:root,kind:"function"});
+    nodes.push({id:w,label:p[1],x:x,y:205,parentId:f,kind:"word"});
   });
+  return {id:"tree-"+uid(), title: sentence, nodes};
+}
 
-  svg.addEventListener('pointermove', (e) => {
-    if (!state.drag) return;
-    if (state.drag.type === 'pan') {
-      const dx = e.clientX - state.drag.startX;
-      const dy = e.clientY - state.drag.startY;
-      if (Math.abs(dx) + Math.abs(dy) > 2) state.drag.moved = true;
-      state.view.x = state.drag.viewX + dx;
-      state.view.y = state.drag.viewY + dy;
-      applyView();
-      updateStatus();
-    } else if (state.drag.type === 'node') {
-      const t = activeTree();
-      const n = t && getNode(t, state.drag.id);
-      if (!n) return;
-      const world = clientToWorld(e.clientX, e.clientY);
-      n.x = Math.round(world.x + state.drag.dx);
-      n.y = Math.round(world.y + state.drag.dy);
-      state.drag.moved = true;
+function activeTree(){ return project.trees.find(t=>t.id===activeTreeId) || project.trees[0]; }
+function getNode(id){ return activeTree().nodes.find(n=>n.id===id); }
+
+function rootNode(tree=activeTree()){ return tree.nodes.find(n=>n.parentId===null) || tree.nodes[0]; }
+
+function autosave(){
+  syncTreeTitleFromRoot();
+  localStorage.setItem(LS_KEY, JSON.stringify(project));
+  status("autosaved");
+}
+
+function status(text){ document.getElementById("status").textContent = "v10-sentence-root-top-editor · " + text; }
+
+function restore(){
+  const saved = localStorage.getItem(LS_KEY);
+  if(saved){
+    try{
+      project = JSON.parse(saved);
+      project.trees.forEach(t=>{
+        const r = rootNode(t);
+        if(r) t.title = r.label;
+      });
+      activeTreeId = project.trees[0]?.id;
+    }catch(e){}
+  }
+}
+
+function syncTreeTitleFromRoot(){
+  const tree = activeTree();
+  const r = rootNode(tree);
+  if(tree && r) tree.title = r.label;
+}
+
+function renderAll(){
+  document.getElementById("projectTitle").value = project.title || "";
+  renderTreeList();
+  renderCanvas();
+}
+
+function renderTreeList(){
+  const list = document.getElementById("treeList");
+  list.innerHTML = "";
+  project.trees.forEach((tree, idx)=>{
+    const r = rootNode(tree);
+    tree.title = r?.label || tree.title || "Untitled sentence";
+    const item = document.createElement("div");
+    item.className = "tree-item" + (tree.id===activeTreeId ? " active" : "");
+    item.textContent = (idx+1) + ". " + tree.title;
+    item.onclick = ()=>{
+      activeTreeId = tree.id;
+      selectedNodeId = rootNode(tree)?.id || null;
+      renderAll();
+      autosave();
+    };
+    list.appendChild(item);
+  });
+}
+
+function renderCanvas(){
+  drawNodes();
+  drawLines();
+  applyView();
+  updateTopEditor();
+}
+
+function nodeBox(n){
+  const label = n.label || "";
+  if(n.kind==="root"){
+    const w = Math.min(560, Math.max(260, label.length * 12 + 36));
+    const lines = Math.max(1, Math.ceil((label.length * 12 + 36) / 560));
+    const h = 28 + lines * 28;
+    return {w,h};
+  }
+  let w = Math.max(n.kind==="function" ? 72 : 42, label.length * (n.kind==="function" ? 15 : 9) + 24);
+  if(n.kind==="word") w = Math.max(40, label.length * 9 + 8);
+  const h = n.kind==="function" ? 44 : 30;
+  return {w,h};
+}
+
+function drawNodes(){
+  const host = document.getElementById("nodes");
+  host.innerHTML = "";
+  activeTree().nodes.forEach(n=>{
+    const b = nodeBox(n);
+    const el = document.createElement("div");
+    el.className = "node " + (n.kind || "function") + (n.id===selectedNodeId ? " selected" : "");
+    el.textContent = n.label;
+    el.style.left = (n.x - b.w/2) + "px";
+    el.style.top = n.y + "px";
+    el.style.width = b.w + "px";
+    el.dataset.id = n.id;
+
+    el.onclick = (e)=>{ e.stopPropagation(); selectedNodeId = n.id; renderCanvas(); };
+    el.ondblclick = (e)=>{ e.stopPropagation(); selectedNodeId = n.id; renderCanvas(); startTopEdit(); };
+    el.onpointerdown = (e)=>{
+      if(document.activeElement === document.getElementById("topEditor")) return;
+      e.stopPropagation();
+      selectedNodeId = n.id;
+      draggingNode = {id:n.id, startX:e.clientX, startY:e.clientY, ox:n.x, oy:n.y};
+      el.setPointerCapture(e.pointerId);
       renderCanvas();
-    }
-  });
-
-  window.addEventListener('pointerup', () => {
-    if (!state.drag) return;
-    const wasNodeMove = state.drag.type === 'node' && state.drag.moved;
-    state.suppressClick = state.drag.moved;
-    state.drag = null;
-    svg.classList.remove('panning');
-    if (wasNodeMove) saveLocal();
-    setTimeout(() => state.suppressClick = false, 0);
-  });
-
-  svg.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const rect = svg.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const before = clientToWorld(e.clientX, e.clientY);
-    const factor = Math.exp(-e.deltaY * 0.0015);
-    state.view.scale = clamp(state.view.scale * factor, 0.2, 4);
-    state.view.x = sx - before.x * state.view.scale;
-    state.view.y = sy - before.y * state.view.scale;
-    applyView();
-    updateStatus();
-  }, { passive: false });
-
-  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-
-  function zoomBy(factor) {
-    const rect = svg.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const before = clientToWorld(cx, cy);
-    state.view.scale = clamp(state.view.scale * factor, 0.2, 4);
-    state.view.x = rect.width / 2 - before.x * state.view.scale;
-    state.view.y = rect.height / 2 - before.y * state.view.scale;
-    applyView();
-    updateStatus();
-  }
-
-  function resetView() {
-    state.view = { x: canvasWrap.clientWidth / 2, y: 110, scale: 1 };
-    renderCanvas();
-  }
-
-  function fitView() {
-    const t = activeTree();
-    if (!t || !t.nodes.length) return resetView();
-    const pad = 120;
-    const xs = t.nodes.map(n => n.x), ys = t.nodes.map(n => n.y);
-    const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
-    const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
-    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
-    const scale = clamp(Math.min(canvasWrap.clientWidth / w, canvasWrap.clientHeight / h), 0.2, 2);
-    state.view.scale = scale;
-    state.view.x = (canvasWrap.clientWidth - w * scale) / 2 - minX * scale;
-    state.view.y = (canvasWrap.clientHeight - h * scale) / 2 - minY * scale;
-    renderCanvas();
-  }
-
-  function exportProject() {
-    const safe = (state.project.title || 'syntaks-project').toLowerCase().replace(/[^a-z0-9æøå_-]+/gi, '-').replace(/^-|-$/g, '') || 'syntaks-project';
-    const blob = new Blob([JSON.stringify(state.project, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${safe}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  function importProjectFile(file) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        state.project = normalizeProject(JSON.parse(reader.result));
-        state.activeTreeId = state.project.trees[0].id;
-        state.selectedNodeId = state.project.trees[0].nodes[0]?.id || null;
-        resetView();
-        renderAll();
-        saveLocal();
-      } catch (err) {
-        alert(`Could not open JSON file: ${err.message}`);
-      }
     };
-    reader.readAsText(file);
+    host.appendChild(el);
+  });
+}
+
+function drawLines(){
+  const svg = document.getElementById("lines");
+  svg.innerHTML = "";
+  const tree = activeTree();
+  tree.nodes.filter(n=>n.parentId).forEach(n=>{
+    const p = getNode(n.parentId);
+    if(!p) return;
+    const pb = nodeBox(p), nb = nodeBox(n);
+    const x1 = p.x, y1 = p.y + pb.h;
+    const x2 = n.x, y2 = n.y;
+    svg.appendChild(svgLine(x1,y1,x2,y2));
+  });
+}
+
+function svgLine(x1,y1,x2,y2){
+  const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+  line.setAttribute("x1",x1); line.setAttribute("y1",y1);
+  line.setAttribute("x2",x2); line.setAttribute("y2",y2);
+  line.setAttribute("stroke","var(--line)");
+  line.setAttribute("stroke-width","1.5");
+  line.setAttribute("vector-effect","non-scaling-stroke");
+  return line;
+}
+
+function applyView(){
+  document.getElementById("world").style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
+}
+
+function updateTopEditor(){
+  const input = document.getElementById("topEditor");
+  const node = selectedNodeId ? getNode(selectedNodeId) : null;
+  if(node){
+    input.value = node.label || "";
+    input.placeholder = node.kind === "root" ? "Editing sentence/root node" : "Editing selected node";
+  }else{
+    input.value = "";
+    input.placeholder = "Select a node, then press Enter or F2";
   }
+}
 
-  $('projectTitle').addEventListener('input', (e) => {
-    state.project.title = e.target.value;
-    saveLocal();
-  });
-
-  $('sentenceTitle').addEventListener('input', (e) => {
-    const t = activeTree();
-    if (!t) return;
-    t.title = e.target.value;
-    renderList();
-    saveLocal();
-  });
-
-  $('newProject').addEventListener('click', () => {
-    if (!confirm('Start a new blank project? Unsaved changes will be replaced.')) return;
-    const t = defaultTree('New sentence');
-    state.project = { version: 1, title: 'Untitled project', trees: [t] };
-    state.activeTreeId = t.id;
-    state.selectedNodeId = t.nodes[0].id;
-    localStorage.removeItem(STORAGE_KEY);
-    resetView();
-    renderAll();
-  });
-
-  $('openProject').addEventListener('click', () => $('fileInput').click());
-  $('fileInput').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) importProjectFile(file);
-    e.target.value = '';
-  });
-
-  $('saveProject').addEventListener('click', exportProject);
-  $('addTree').addEventListener('click', addTree);
-  $('duplicateTree').addEventListener('click', duplicateTree);
-  $('deleteTree').addEventListener('click', deleteTree);
-  $('addRoot').addEventListener('click', addRootIfNeeded);
-  $('addChild').addEventListener('click', addChild);
-  $('addSibling').addEventListener('click', addSibling);
-  $('deleteNode').addEventListener('click', deleteNode);
-  $('fitView').addEventListener('click', fitView);
-  $('resetView').addEventListener('click', resetView);
-  $('zoomIn').addEventListener('click', () => zoomBy(1.2));
-  $('zoomOut').addEventListener('click', () => zoomBy(1 / 1.2));
-
-  window.addEventListener('keydown', (e) => {
-    const tag = document.activeElement?.tagName?.toLowerCase();
-    if (tag === 'input' || tag === 'textarea') return;
-    if (e.key === 'Enter') { e.preventDefault(); if (state.selectedNodeId) beginNodeEdit(state.selectedNodeId); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); navigateNode('up'); }
-    if (e.key === 'ArrowDown') { e.preventDefault(); navigateNode('down'); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); navigateNode('left'); }
-    if (e.key === 'ArrowRight') { e.preventDefault(); navigateNode('right'); }
-    if (e.key.toLowerCase() === 'c') { e.preventDefault(); addChild(); }
-    if (e.key.toLowerCase() === 's') { e.preventDefault(); addSibling(); }
-    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteNode(); }
-    if (e.key === '0') resetView();
-  });
-
-  function init() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        state.project = normalizeProject(JSON.parse(saved));
-        updateStatus('restored autosave');
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-        state.project = defaultProject();
-        updateStatus('autosave was invalid; started new project');
-      }
-    }
-    state.activeTreeId = state.project.trees[0].id;
-    state.selectedNodeId = state.project.trees[0].nodes[0]?.id || null;
-    resetView();
-    renderAll();
+function startTopEdit(){
+  const input = document.getElementById("topEditor");
+  const node = selectedNodeId ? getNode(selectedNodeId) : null;
+  if(!node){
+    status("select a node first");
+    return;
   }
+  input.value = node.label || "";
+  input.classList.add("editing");
+  input.focus();
+  input.select();
+}
 
-  init();
-})();
+function commitTopEdit(){
+  const input = document.getElementById("topEditor");
+  const value = input.value.trim();
+  const node = selectedNodeId ? getNode(selectedNodeId) : null;
+  if(node){
+    node.label = value || node.label;
+    if(node.kind === "root") activeTree().title = node.label;
+    input.classList.remove("editing");
+    renderAll();
+    autosave();
+    status("node updated");
+  }
+}
+
+function cancelTopEdit(){
+  document.getElementById("topEditor").classList.remove("editing");
+  updateTopEditor();
+}
+
+function addChild(){
+  const tree = activeTree();
+  if(!selectedNodeId) return status("select a node first");
+  const parent = getNode(selectedNodeId);
+  const childKind = parent.kind === "function" ? "word" : "function";
+  const child = {
+    id:"node-"+uid(),
+    label: childKind === "word" ? "ord" : "?",
+    x:parent.x,
+    y:parent.y + (parent.kind === "root" ? 140 : 110),
+    parentId:parent.id,
+    kind:childKind
+  };
+  tree.nodes.push(child);
+  selectedNodeId = child.id;
+  renderAll(); autosave();
+}
+
+function addSibling(){
+  const tree = activeTree();
+  if(!selectedNodeId) return status("select a node first");
+  const node = getNode(selectedNodeId);
+  if(!node.parentId) return status("root node cannot have a sibling");
+  const sib = {id:"node-"+uid(),label:"?",x:node.x+120,y:node.y,parentId:node.parentId,kind:node.kind};
+  tree.nodes.push(sib);
+  selectedNodeId = sib.id;
+  renderAll(); autosave();
+}
+
+function deleteNode(){
+  if(!selectedNodeId) return;
+  const tree = activeTree();
+  const node = getNode(selectedNodeId);
+  if(node && node.kind === "root") return status("root sentence node cannot be deleted");
+  const remove = new Set([selectedNodeId]);
+  let changed = true;
+  while(changed){
+    changed = false;
+    tree.nodes.forEach(n=>{
+      if(remove.has(n.parentId) && !remove.has(n.id)){ remove.add(n.id); changed = true; }
+    });
+  }
+  tree.nodes = tree.nodes.filter(n=>!remove.has(n.id));
+  selectedNodeId = rootNode(tree)?.id || null;
+  renderAll(); autosave();
+}
+
+function fit(){
+  const visible = activeTree().nodes;
+  if(!visible.length) return;
+  const xs = visible.map(n=>n.x), ys = visible.map(n=>n.y);
+  const minX=Math.min(...xs)-180, maxX=Math.max(...xs)+180, minY=Math.min(...ys)-140, maxY=Math.max(...ys)+160;
+  const canvas = document.getElementById("canvas").getBoundingClientRect();
+  const scale = Math.min(1.2, Math.max(.35, Math.min(canvas.width/(maxX-minX), canvas.height/(maxY-minY))));
+  view.scale = scale;
+  view.x = -(minX+maxX)/2*scale;
+  view.y = 20 - minY*scale;
+  applyView();
+}
+
+function reset(){ view={x:0,y:0,scale:1}; applyView(); }
+function zoom(factor, cx, cy){
+  const before = {x:(cx-view.x)/view.scale, y:(cy-view.y)/view.scale};
+  view.scale = Math.max(.2, Math.min(3, view.scale*factor));
+  view.x = cx - before.x*view.scale;
+  view.y = cy - before.y*view.scale;
+  applyView();
+}
+
+document.getElementById("projectTitle").oninput = e=>{ project.title=e.target.value; autosave(); };
+document.getElementById("topEditor").onkeydown = e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    commitTopEdit();
+    e.currentTarget.blur();
+  }
+  if(e.key==="Escape"){
+    e.preventDefault();
+    cancelTopEdit();
+    e.currentTarget.blur();
+  }
+};
+document.getElementById("topEditor").onfocus = e=>{
+  if(selectedNodeId) e.currentTarget.classList.add("editing");
+};
+document.getElementById("topEditor").onblur = e=>{
+  if(e.currentTarget.classList.contains("editing")) commitTopEdit();
+};
+
+document.getElementById("newTree").onclick=()=>{
+  const t = makeTree("Ny sætning.", [["S","?"],["V","?"]]);
+  project.trees.push(t); activeTreeId=t.id; selectedNodeId=rootNode(t).id; renderAll(); autosave();
+};
+document.getElementById("deleteTree").onclick=()=>{
+  if(project.trees.length<=1) return status("keep at least one tree");
+  if(!confirm("Delete current tree?")) return;
+  project.trees = project.trees.filter(t=>t.id!==activeTreeId);
+  activeTreeId = project.trees[0].id; selectedNodeId=rootNode(project.trees[0]).id; renderAll(); autosave();
+};
+document.getElementById("addChild").onclick=addChild;
+document.getElementById("addSibling").onclick=addSibling;
+document.getElementById("deleteNode").onclick=deleteNode;
+document.getElementById("fit").onclick=fit;
+document.getElementById("reset").onclick=reset;
+document.getElementById("zoomIn").onclick=()=>zoom(1.15, window.innerWidth/2, window.innerHeight/2);
+document.getElementById("zoomOut").onclick=()=>zoom(1/1.15, window.innerWidth/2, window.innerHeight/2);
+
+document.getElementById("saveBtn").onclick=()=>{
+  syncTreeTitleFromRoot();
+  const blob = new Blob([JSON.stringify(project,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (project.title || "syntaks-project").toLowerCase().replace(/[^a-z0-9æøå]+/gi,"-") + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById("openBtn").onclick=()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const text = await file.text();
+  project = JSON.parse(text);
+  project.trees.forEach(t=>{
+    const r = rootNode(t);
+    if(r) t.title = r.label;
+  });
+  activeTreeId = project.trees[0]?.id;
+  selectedNodeId = rootNode(activeTree())?.id || null;
+  renderAll(); autosave(); status("loaded JSON");
+};
+
+const canvas = document.getElementById("canvas");
+canvas.onpointerdown = e=>{
+  if(e.target !== canvas) return;
+  draggingCanvas = {x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};
+  canvas.classList.add("dragging");
+};
+window.onpointermove = e=>{
+  if(draggingNode){
+    const n = getNode(draggingNode.id); if(!n) return;
+    n.x = draggingNode.ox + (e.clientX-draggingNode.startX)/view.scale;
+    n.y = draggingNode.oy + (e.clientY-draggingNode.startY)/view.scale;
+    drawNodes(); drawLines();
+  }
+  if(draggingCanvas){
+    view.x = draggingCanvas.vx + (e.clientX-draggingCanvas.x);
+    view.y = draggingCanvas.vy + (e.clientY-draggingCanvas.y);
+    applyView();
+  }
+};
+window.onpointerup = ()=>{
+  if(draggingNode){ draggingNode=null; autosave(); }
+  draggingCanvas=null; canvas.classList.remove("dragging");
+};
+canvas.onwheel = e=>{
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  zoom(e.deltaY < 0 ? 1.08 : 1/1.08, e.clientX - rect.left - rect.width/2, e.clientY - rect.top - 190);
+};
+
+window.onkeydown=e=>{
+  if(document.activeElement === document.getElementById("topEditor")) return;
+  if((e.key==="Enter" || e.key==="F2") && selectedNodeId){ e.preventDefault(); startTopEdit(); }
+  if(e.key==="Delete" || e.key==="Backspace"){ if(selectedNodeId){ e.preventDefault(); deleteNode(); } }
+};
+
+restore();
+selectedNodeId = rootNode(activeTree())?.id || null;
+renderAll();
+setTimeout(fit, 50);
 </script>
 </body>
 </html>
