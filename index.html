@@ -1,17 +1,627 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <script src="https://use.fontawesome.com/4d36999296.js"></script>
-    <link rel="stylesheet" href="/style/css/main.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>syntaks — minimal tree workspace</title>
+<style>
+  :root{
+    --bg:#282828;
+    --bg2:#1d2021;
+    --panel:#32302f;
+    --soft:#3c3836;
+    --text:#ebdbb2;
+    --muted:#a89984;
+    --line:#928374;
+    --accent:#fabd2f;
+    --green:#b8bb26;
+    --red:#fb4934;
+    --blue:#83a598;
+    --node:#282828;
+    --node-active:#3c3836;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; overflow:hidden; background:var(--bg); color:var(--text); font:15px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; }
+  button,input,textarea{ font:inherit; color:inherit; }
+  button{ background:transparent; border:0; color:var(--muted); cursor:pointer; padding:2px 4px; border-radius:2px; }
+  button:hover,button:focus{ color:var(--accent); outline:1px solid var(--soft); }
+  button.danger:hover{ color:var(--red); }
+  input,textarea{ width:100%; background:var(--bg2); border:1px solid var(--soft); color:var(--text); padding:6px 8px; outline:none; }
+  input:focus,textarea:focus{ border-color:var(--accent); }
+  .app{ height:100%; display:grid; grid-template-columns:320px 1fr; }
+  aside{ border-right:1px solid var(--soft); background:var(--bg2); min-width:0; display:flex; flex-direction:column; }
+  header{ padding:12px; border-bottom:1px solid var(--soft); }
+  h1{ font-size:16px; margin:0 0 10px; color:var(--accent); font-weight:700; }
+  .row{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .row.nowrap{ flex-wrap:nowrap; }
+  .tiny{ font-size:12px; color:var(--muted); }
+  .toolbar{ padding:8px 12px; border-bottom:1px solid var(--soft); display:flex; gap:8px; flex-wrap:wrap; }
+  .tree-list{ overflow:auto; flex:1; padding:8px; }
+  .item{ border:1px solid transparent; padding:8px; margin-bottom:6px; cursor:pointer; border-radius:4px; color:var(--muted); }
+  .item:hover{ border-color:var(--soft); color:var(--text); }
+  .item.active{ border-color:var(--accent); color:var(--text); background:#32302f; }
+  .item-title{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item-meta{ font-size:12px; color:var(--muted); margin-top:2px; }
+  main{ min-width:0; display:grid; grid-template-rows:auto 1fr auto; }
+  .topbar{ padding:10px 12px; border-bottom:1px solid var(--soft); background:var(--panel); display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; }
+  .topbar input{ background:var(--bg); }
+  .canvasbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .canvas-wrap{ position:relative; overflow:hidden; background:radial-gradient(circle at 1px 1px, #3c3836 1px, transparent 0) 0 0/24px 24px, var(--bg); touch-action:none; user-select:none; }
+  svg{ width:100%; height:100%; display:block; cursor:grab; }
+  svg.panning{ cursor:grabbing; }
+  .status{ padding:6px 12px; border-top:1px solid var(--soft); color:var(--muted); background:var(--bg2); display:flex; justify-content:space-between; gap:10px; }
+  .hidden-file{ display:none; }
+  .kbd{ color:var(--accent); }
+  .node rect{ fill:var(--node); stroke:var(--line); stroke-width:1.4; rx:4; }
+  .node text{ fill:var(--text); dominant-baseline:middle; text-anchor:middle; pointer-events:none; }
+  .node.active rect{ stroke:var(--accent); stroke-width:2.2; fill:var(--node-active); }
+  .node:hover rect{ stroke:var(--blue); }
+  .edge{ stroke:var(--line); stroke-width:1.4; fill:none; }
+  .ghost{ opacity:.45; }
+  .notice{ padding:8px 12px; border-top:1px solid var(--soft); color:var(--muted); }
+  .notice strong{ color:var(--text); }
+</style>
 </head>
-<body class="splash">
-    <h3 class="page_title">Syntree</h3>
-    <h5 class="page_title page_title_secondary">The Division III Project of Andrew Zito</h5>
-
-    <div class="block_menu">
-        <ul>
-            <a href="/app.html"><li><i class="fa fa-tree" aria-hidden="true"></i>Check it out! (Make a Tree)</li></a>
-        </ul>
+<body>
+<div class="app">
+  <aside>
+    <header>
+      <h1>syntaks</h1>
+      <input id="projectTitle" placeholder="Project title" />
+      <div class="row" style="margin-top:8px">
+        <button id="newProject">new</button>
+        <button id="openProject">open json</button>
+        <button id="saveProject">save json</button>
+      </div>
+      <input class="hidden-file" id="fileInput" type="file" accept="application/json,.json" />
+    </header>
+    <div class="toolbar">
+      <button id="addTree">+ sentence</button>
+      <button id="duplicateTree">duplicate</button>
+      <button id="deleteTree" class="danger">delete</button>
     </div>
+    <div id="treeList" class="tree-list"></div>
+    <div class="notice tiny">
+      <strong>Canvas:</strong> drag background to pan, wheel to zoom, drag nodes to move.<br>
+      <strong>Keys:</strong> <span class="kbd">Enter</span> edit, <span class="kbd">C</span> child, <span class="kbd">S</span> sibling, <span class="kbd">Del</span> delete.
+    </div>
+  </aside>
+  <main>
+    <div class="topbar">
+      <input id="sentenceTitle" placeholder="Sentence / tree title" />
+      <div class="canvasbar">
+        <button id="addRoot">root</button>
+        <button id="addChild">child</button>
+        <button id="addSibling">sibling</button>
+        <button id="deleteNode" class="danger">delete node</button>
+        <button id="fitView">fit</button>
+        <button id="resetView">reset</button>
+        <button id="zoomIn">+</button>
+        <button id="zoomOut">−</button>
+      </div>
+    </div>
+    <div id="canvasWrap" class="canvas-wrap">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg">
+        <g id="viewport"></g>
+      </svg>
+    </div>
+    <div class="status tiny">
+      <span id="statusLeft"></span>
+      <span id="statusRight"></span>
+    </div>
+  </main>
+</div>
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'syntaks.minimal.project.v1';
+  const $ = (id) => document.getElementById(id);
+  const svg = $('svg');
+  const viewport = $('viewport');
+  const canvasWrap = $('canvasWrap');
+
+  const state = {
+    project: defaultProject(),
+    activeTreeId: null,
+    selectedNodeId: null,
+    view: { x: 0, y: 0, scale: 1 },
+    drag: null,
+    suppressClick: false
+  };
+
+  function uid(prefix='id') {
+    return `${prefix}-${Math.random().toString(36).slice(2, 9)}-${Date.now().toString(36).slice(-4)}`;
+  }
+
+  function defaultTree(title='New sentence') {
+    const root = uid('node');
+    return {
+      id: uid('tree'),
+      title,
+      nodes: [{ id: root, label: 'S', x: 0, y: 0, parentId: null }]
+    };
+  }
+
+  function defaultProject() {
+    const t = defaultTree('Jeg synes, at han er sød.');
+    const n1 = uid('node'), n2 = uid('node'), n3 = uid('node');
+    t.nodes = [
+      { id: t.nodes[0].id, label: 'S', x: 0, y: 0, parentId: null },
+      { id: n1, label: 'Jeg', x: -170, y: 95, parentId: t.nodes[0].id },
+      { id: n2, label: 'V', x: 0, y: 95, parentId: t.nodes[0].id },
+      { id: n3, label: 'at han er sød', x: 170, y: 95, parentId: t.nodes[0].id }
+    ];
+    return { version: 1, title: 'Syntaksøvelse', trees: [t] };
+  }
+
+  function activeTree() {
+    return state.project.trees.find(t => t.id === state.activeTreeId) || null;
+  }
+
+  function selectedNode() {
+    const t = activeTree();
+    return t ? t.nodes.find(n => n.id === state.selectedNodeId) || null : null;
+  }
+
+  function childrenOf(tree, nodeId) {
+    return tree.nodes.filter(n => n.parentId === nodeId);
+  }
+
+  function getNode(tree, id) {
+    return tree.nodes.find(n => n.id === id) || null;
+  }
+
+  function normalizeProject(raw) {
+    if (Array.isArray(raw)) {
+      return {
+        version: 1,
+        title: 'Imported project',
+        trees: raw.map((item, i) => defaultTreeFromLegacy(item, `Tree ${i + 1}`))
+      };
+    }
+    if (!raw || typeof raw !== 'object') throw new Error('Not a JSON object.');
+    const project = {
+      version: Number(raw.version || 1),
+      title: String(raw.title || 'Untitled project'),
+      trees: Array.isArray(raw.trees) ? raw.trees.map((tree, i) => normalizeTree(tree, i)) : []
+    };
+    if (!project.trees.length) project.trees.push(defaultTree('New sentence'));
+    return project;
+  }
+
+  function defaultTreeFromLegacy(item, title) {
+    // Minimal fallback for old array exports: preserve the old string as a note-like root label.
+    const t = defaultTree(title);
+    t.legacyTreeString = String(item || '');
+    t.nodes[0].label = 'S';
+    return t;
+  }
+
+  function normalizeTree(tree, index) {
+    const out = {
+      id: String(tree.id || uid('tree')),
+      title: String(tree.title || `Tree ${index + 1}`),
+      nodes: Array.isArray(tree.nodes) ? tree.nodes.map(normalizeNode).filter(Boolean) : []
+    };
+    if (!out.nodes.length) out.nodes = defaultTree(out.title).nodes;
+    if (!out.nodes.some(n => n.parentId === null)) out.nodes[0].parentId = null;
+    return out;
+  }
+
+  function normalizeNode(n) {
+    if (!n || typeof n !== 'object') return null;
+    return {
+      id: String(n.id || uid('node')),
+      label: String(n.label ?? ''),
+      x: Number.isFinite(Number(n.x)) ? Number(n.x) : 0,
+      y: Number.isFinite(Number(n.y)) ? Number(n.y) : 0,
+      parentId: n.parentId == null ? null : String(n.parentId)
+    };
+  }
+
+  function saveLocal() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.project));
+    updateStatus('autosaved');
+  }
+
+  function updateStatus(msg='') {
+    const t = activeTree();
+    $('statusLeft').textContent = t ? `${state.project.trees.indexOf(t) + 1}/${state.project.trees.length} · ${t.nodes.length} nodes${msg ? ' · ' + msg : ''}` : 'no tree';
+    $('statusRight').textContent = `zoom ${Math.round(state.view.scale * 100)}%`;
+  }
+
+  function renderAll() {
+    $('projectTitle').value = state.project.title;
+    const t = activeTree();
+    $('sentenceTitle').value = t ? t.title : '';
+    renderList();
+    renderCanvas();
+    updateStatus();
+  }
+
+  function renderList() {
+    const list = $('treeList');
+    list.innerHTML = '';
+    state.project.trees.forEach((tree, i) => {
+      const div = document.createElement('div');
+      div.className = `item${tree.id === state.activeTreeId ? ' active' : ''}`;
+      div.innerHTML = `<div class="item-title"></div><div class="item-meta"></div>`;
+      div.querySelector('.item-title').textContent = `${i + 1}. ${tree.title || 'Untitled'}`;
+      div.querySelector('.item-meta').textContent = `${tree.nodes.length} nodes`;
+      div.addEventListener('click', () => {
+        state.activeTreeId = tree.id;
+        state.selectedNodeId = tree.nodes[0]?.id || null;
+        renderAll();
+        saveLocal();
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function svgEl(name, attrs = {}) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    return el;
+  }
+
+  function renderCanvas() {
+    viewport.innerHTML = '';
+    applyView();
+    const t = activeTree();
+    if (!t) return;
+
+    const edges = svgEl('g');
+    const nodes = svgEl('g');
+    viewport.append(edges, nodes);
+
+    t.nodes.forEach(n => {
+      if (!n.parentId) return;
+      const p = getNode(t, n.parentId);
+      if (!p) return;
+      edges.appendChild(svgEl('path', {
+        class: 'edge',
+        d: `M ${p.x} ${p.y + 20} C ${p.x} ${(p.y + n.y) / 2}, ${n.x} ${(p.y + n.y) / 2}, ${n.x} ${n.y - 20}`
+      }));
+    });
+
+    t.nodes.forEach(n => {
+      const width = Math.max(48, Math.min(260, n.label.length * 8 + 28));
+      const g = svgEl('g', { class: `node${n.id === state.selectedNodeId ? ' active' : ''}`, transform: `translate(${n.x},${n.y})`, 'data-id': n.id });
+      g.appendChild(svgEl('rect', { x: -width / 2, y: -20, width, height: 40 }));
+      const text = svgEl('text', { x: 0, y: 1 });
+      text.textContent = n.label || '…';
+      g.appendChild(text);
+      g.addEventListener('pointerdown', nodePointerDown);
+      g.addEventListener('dblclick', () => editNode(n.id));
+      nodes.appendChild(g);
+    });
+  }
+
+  function applyView() {
+    viewport.setAttribute('transform', `translate(${state.view.x} ${state.view.y}) scale(${state.view.scale})`);
+  }
+
+  function clientToWorld(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - state.view.x) / state.view.scale,
+      y: (clientY - rect.top - state.view.y) / state.view.scale
+    };
+  }
+
+  function addTree() {
+    const t = defaultTree('New sentence');
+    state.project.trees.push(t);
+    state.activeTreeId = t.id;
+    state.selectedNodeId = t.nodes[0].id;
+    renderAll();
+    saveLocal();
+    $('sentenceTitle').focus();
+    $('sentenceTitle').select();
+  }
+
+  function duplicateTree() {
+    const t = activeTree();
+    if (!t) return;
+    const copy = JSON.parse(JSON.stringify(t));
+    const idMap = new Map();
+    copy.id = uid('tree');
+    copy.title = `${copy.title} copy`;
+    copy.nodes.forEach(n => { const old = n.id; n.id = uid('node'); idMap.set(old, n.id); });
+    copy.nodes.forEach(n => { if (n.parentId) n.parentId = idMap.get(n.parentId) || null; });
+    state.project.trees.push(copy);
+    state.activeTreeId = copy.id;
+    state.selectedNodeId = copy.nodes[0]?.id || null;
+    renderAll();
+    saveLocal();
+  }
+
+  function deleteTree() {
+    if (state.project.trees.length <= 1) {
+      alert('Keep at least one tree in the project.');
+      return;
+    }
+    const t = activeTree();
+    if (!t || !confirm(`Delete "${t.title}"?`)) return;
+    const index = state.project.trees.indexOf(t);
+    state.project.trees.splice(index, 1);
+    const next = state.project.trees[Math.max(0, index - 1)];
+    state.activeTreeId = next.id;
+    state.selectedNodeId = next.nodes[0]?.id || null;
+    renderAll();
+    saveLocal();
+  }
+
+  function addRootIfNeeded() {
+    const t = activeTree();
+    if (!t) return;
+    if (t.nodes.some(n => n.parentId === null)) return;
+    const n = { id: uid('node'), label: 'S', x: 0, y: 0, parentId: null };
+    t.nodes.push(n);
+    state.selectedNodeId = n.id;
+    renderAll();
+    saveLocal();
+  }
+
+  function addChild() {
+    const t = activeTree();
+    const parent = selectedNode();
+    if (!t || !parent) return;
+    const siblings = childrenOf(t, parent.id);
+    const offset = (siblings.length - 0.5) * 110;
+    const n = { id: uid('node'), label: 'node', x: parent.x + offset, y: parent.y + 95, parentId: parent.id };
+    t.nodes.push(n);
+    state.selectedNodeId = n.id;
+    renderAll();
+    saveLocal();
+    editNode(n.id);
+  }
+
+  function addSibling() {
+    const t = activeTree();
+    const n = selectedNode();
+    if (!t || !n || !n.parentId) return;
+    const siblings = childrenOf(t, n.parentId);
+    const newNode = { id: uid('node'), label: 'node', x: n.x + 115, y: n.y, parentId: n.parentId };
+    t.nodes.push(newNode);
+    // spread siblings gently so the new node does not sit on top of old ones
+    siblings.concat(newNode).forEach((s, i, arr) => {
+      const center = arr.reduce((sum, item) => sum + item.x, 0) / arr.length;
+      s.x = center + (i - (arr.length - 1) / 2) * 115;
+    });
+    state.selectedNodeId = newNode.id;
+    renderAll();
+    saveLocal();
+    editNode(newNode.id);
+  }
+
+  function deleteNode() {
+    const t = activeTree();
+    const n = selectedNode();
+    if (!t || !n) return;
+    if (n.parentId === null && t.nodes.length > 1) {
+      alert('Delete child nodes first, or keep the root.');
+      return;
+    }
+    const toDelete = new Set();
+    const collect = (id) => {
+      toDelete.add(id);
+      childrenOf(t, id).forEach(ch => collect(ch.id));
+    };
+    collect(n.id);
+    t.nodes = t.nodes.filter(node => !toDelete.has(node.id));
+    state.selectedNodeId = t.nodes[0]?.id || null;
+    renderAll();
+    saveLocal();
+  }
+
+  function editNode(id) {
+    const t = activeTree();
+    const n = t && getNode(t, id);
+    if (!n) return;
+    const value = prompt('Node label:', n.label);
+    if (value === null) return;
+    n.label = value.trim() || '…';
+    state.selectedNodeId = n.id;
+    renderAll();
+    saveLocal();
+  }
+
+  function nodePointerDown(e) {
+    e.stopPropagation();
+    const t = activeTree();
+    const node = t && getNode(t, e.currentTarget.dataset.id);
+    if (!node) return;
+    state.selectedNodeId = node.id;
+    const world = clientToWorld(e.clientX, e.clientY);
+    state.drag = { type: 'node', id: node.id, dx: node.x - world.x, dy: node.y - world.y, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    renderAll();
+  }
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (e.target.closest && e.target.closest('.node')) return;
+    state.drag = { type: 'pan', startX: e.clientX, startY: e.clientY, viewX: state.view.x, viewY: state.view.y, moved: false };
+    svg.classList.add('panning');
+    svg.setPointerCapture(e.pointerId);
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    if (!state.drag) return;
+    if (state.drag.type === 'pan') {
+      const dx = e.clientX - state.drag.startX;
+      const dy = e.clientY - state.drag.startY;
+      if (Math.abs(dx) + Math.abs(dy) > 2) state.drag.moved = true;
+      state.view.x = state.drag.viewX + dx;
+      state.view.y = state.drag.viewY + dy;
+      applyView();
+      updateStatus();
+    } else if (state.drag.type === 'node') {
+      const t = activeTree();
+      const n = t && getNode(t, state.drag.id);
+      if (!n) return;
+      const world = clientToWorld(e.clientX, e.clientY);
+      n.x = Math.round(world.x + state.drag.dx);
+      n.y = Math.round(world.y + state.drag.dy);
+      state.drag.moved = true;
+      renderCanvas();
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    if (!state.drag) return;
+    const wasNodeMove = state.drag.type === 'node' && state.drag.moved;
+    state.suppressClick = state.drag.moved;
+    state.drag = null;
+    svg.classList.remove('panning');
+    if (wasNodeMove) saveLocal();
+    setTimeout(() => state.suppressClick = false, 0);
+  });
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const before = clientToWorld(e.clientX, e.clientY);
+    const factor = Math.exp(-e.deltaY * 0.0015);
+    state.view.scale = clamp(state.view.scale * factor, 0.2, 4);
+    state.view.x = sx - before.x * state.view.scale;
+    state.view.y = sy - before.y * state.view.scale;
+    applyView();
+    updateStatus();
+  }, { passive: false });
+
+  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+  function zoomBy(factor) {
+    const rect = svg.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const before = clientToWorld(cx, cy);
+    state.view.scale = clamp(state.view.scale * factor, 0.2, 4);
+    state.view.x = rect.width / 2 - before.x * state.view.scale;
+    state.view.y = rect.height / 2 - before.y * state.view.scale;
+    applyView();
+    updateStatus();
+  }
+
+  function resetView() {
+    state.view = { x: canvasWrap.clientWidth / 2, y: 110, scale: 1 };
+    renderCanvas();
+  }
+
+  function fitView() {
+    const t = activeTree();
+    if (!t || !t.nodes.length) return resetView();
+    const pad = 120;
+    const xs = t.nodes.map(n => n.x), ys = t.nodes.map(n => n.y);
+    const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+    const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+    const w = Math.max(1, maxX - minX), h = Math.max(1, maxY - minY);
+    const scale = clamp(Math.min(canvasWrap.clientWidth / w, canvasWrap.clientHeight / h), 0.2, 2);
+    state.view.scale = scale;
+    state.view.x = (canvasWrap.clientWidth - w * scale) / 2 - minX * scale;
+    state.view.y = (canvasWrap.clientHeight - h * scale) / 2 - minY * scale;
+    renderCanvas();
+  }
+
+  function exportProject() {
+    const safe = (state.project.title || 'syntaks-project').toLowerCase().replace(/[^a-z0-9æøå_-]+/gi, '-').replace(/^-|-$/g, '') || 'syntaks-project';
+    const blob = new Blob([JSON.stringify(state.project, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${safe}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function importProjectFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        state.project = normalizeProject(JSON.parse(reader.result));
+        state.activeTreeId = state.project.trees[0].id;
+        state.selectedNodeId = state.project.trees[0].nodes[0]?.id || null;
+        resetView();
+        renderAll();
+        saveLocal();
+      } catch (err) {
+        alert(`Could not open JSON file: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  $('projectTitle').addEventListener('input', (e) => {
+    state.project.title = e.target.value;
+    saveLocal();
+  });
+
+  $('sentenceTitle').addEventListener('input', (e) => {
+    const t = activeTree();
+    if (!t) return;
+    t.title = e.target.value;
+    renderList();
+    saveLocal();
+  });
+
+  $('newProject').addEventListener('click', () => {
+    if (!confirm('Start a new blank project? Unsaved changes will be replaced.')) return;
+    const t = defaultTree('New sentence');
+    state.project = { version: 1, title: 'Untitled project', trees: [t] };
+    state.activeTreeId = t.id;
+    state.selectedNodeId = t.nodes[0].id;
+    localStorage.removeItem(STORAGE_KEY);
+    resetView();
+    renderAll();
+  });
+
+  $('openProject').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) importProjectFile(file);
+    e.target.value = '';
+  });
+
+  $('saveProject').addEventListener('click', exportProject);
+  $('addTree').addEventListener('click', addTree);
+  $('duplicateTree').addEventListener('click', duplicateTree);
+  $('deleteTree').addEventListener('click', deleteTree);
+  $('addRoot').addEventListener('click', addRootIfNeeded);
+  $('addChild').addEventListener('click', addChild);
+  $('addSibling').addEventListener('click', addSibling);
+  $('deleteNode').addEventListener('click', deleteNode);
+  $('fitView').addEventListener('click', fitView);
+  $('resetView').addEventListener('click', resetView);
+  $('zoomIn').addEventListener('click', () => zoomBy(1.2));
+  $('zoomOut').addEventListener('click', () => zoomBy(1 / 1.2));
+
+  window.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea') return;
+    if (e.key === 'Enter') { e.preventDefault(); if (state.selectedNodeId) editNode(state.selectedNodeId); }
+    if (e.key.toLowerCase() === 'c') { e.preventDefault(); addChild(); }
+    if (e.key.toLowerCase() === 's') { e.preventDefault(); addSibling(); }
+    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteNode(); }
+    if (e.key === '0') resetView();
+  });
+
+  function init() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && confirm('Restore autosaved syntaks project?')) {
+      try { state.project = normalizeProject(JSON.parse(saved)); }
+      catch { state.project = defaultProject(); }
+    }
+    state.activeTreeId = state.project.trees[0].id;
+    state.selectedNodeId = state.project.trees[0].nodes[0]?.id || null;
+    resetView();
+    renderAll();
+  }
+
+  init();
+})();
+</script>
 </body>
 </html>
