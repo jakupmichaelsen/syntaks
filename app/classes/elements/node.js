@@ -240,10 +240,12 @@ Syntree.Node.prototype.createGraphic = function() {
                         x: bbox.x2,
                         y: bbox.y - 10,
                     });
-                    // editor_container is offset by pan transform; editor position is relative to it
+                    // Position editor using screen coords relative to workspace_panel
+                    var labelRect = g.getEl('label').node.getBoundingClientRect();
+                    var panelRect = document.getElementById('workspace_panel').getBoundingClientRect();
                     g.getEl('editor').css({
-                        'left': bbox.x + 'px',
-                        'top': bbox.y + 'px',
+                        'left': (labelRect.left - panelRect.left) + 'px',
+                        'top': (labelRect.top - panelRect.top) + 'px',
                     });
                     d.lastSyncedPosition = {
                         x: d.getPosition().x,
