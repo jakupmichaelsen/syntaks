@@ -652,18 +652,28 @@ Syntree.Workspace = {
 
     _eventUpload: function() {
         var W = this;
-        $('body').append('<input type="file" id="temp-choose-file">');
+        $('body').append('<input type="file" id="temp-choose-file" accept=".json,.tree">');
         $('#temp-choose-file').change(function() {
             var f = document.getElementById('temp-choose-file').files[0];
             if (f) {
                 var reader = new FileReader();
                 reader.readAsText(f, 'UTF-8');
-                reader.onload = function (e) {
-                    W.page.openTree(e.target.result);
-                }
-                reader.onerror = function (e) {
-                    alert('Unable to read file. Please upload a .tree file.')
-                }
+                reader.onload = function(e) {
+                    var content = e.target.result;
+                    try {
+                        var data = JSON.parse(content);
+                        if (Array.isArray(data)) {
+                            for (var i = 0; i < data.length; i++) {
+                                W.page.openTree(data[i]);
+                                W.page.select(W.page.tree.getRoot());
+                            }
+                            return;
+                        }
+                    } catch(ex) {}
+                    W.page.openTree(content);
+                    W.page.select(W.page.tree.getRoot());
+                };
+                reader.onerror = function() { alert('Unable to read file.'); };
             }
             $('#temp-choose-file').remove();
         });
