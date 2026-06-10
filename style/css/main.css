@@ -429,7 +429,13 @@ body.page_make {
   cursor: default !important;
   position: relative;
   display: flex;
+  flex-direction: column;
   height: 100%; }
+
+#workspace_body {
+  display: flex;
+  flex: 1;
+  overflow: hidden; }
 
 #tree-sidebar {
   width: 160px;
@@ -438,7 +444,8 @@ body.page_make {
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
-  overflow: hidden; }
+  overflow: hidden;
+  flex-shrink: 0; }
   #tree-sidebar .sidebar_header {
     padding: 8px 10px;
     font-weight: bold;
@@ -447,7 +454,8 @@ body.page_make {
     background: #e4e4e4;
     display: flex;
     justify-content: space-between;
-    align-items: center; }
+    align-items: center;
+    min-height: 34px; }
   #tree-sidebar .sidebar-new-tree {
     background: none;
     border: 1px solid #aaa;
@@ -517,10 +525,11 @@ body.page_make {
     #workspace_container .delete_button.invisible {
       cursor: default; }
   #workspace_container #toolbar {
-    position: absolute;
+    position: relative;
     border-bottom: 1px solid black;
     width: 100%;
-    background-color: white; }
+    background-color: white;
+    flex-shrink: 0; }
     #workspace_container #toolbar .toolbar_button {
       padding: 1rem;
       border: none;

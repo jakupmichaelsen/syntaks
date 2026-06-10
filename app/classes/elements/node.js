@@ -240,14 +240,11 @@ Syntree.Node.prototype.createGraphic = function() {
                         x: bbox.x2,
                         y: bbox.y - 10,
                     });
-                    // Position editor using screen coords relative to SVG element
-                    var labelNode = g.getEl('label').node;
-                    var svgEl = document.getElementById('workspace');
-                    var labelRect = labelNode.getBoundingClientRect();
-                    var svgRect = svgEl.getBoundingClientRect();
+                    // Position editor: bbox is in SVG local space, offset by pan transform
+                    var t = Syntree.Workspace.page.getTransform();
                     g.getEl('editor').css({
-                        'left': (labelRect.left - svgRect.left) + 'px',
-                        'top': (labelRect.top - svgRect.top) + 'px',
+                        'left': (bbox.x + t.dx) + 'px',
+                        'top': (bbox.y + t.dy) + 'px',
                     });
                     d.lastSyncedPosition = {
                         x: d.getPosition().x,
