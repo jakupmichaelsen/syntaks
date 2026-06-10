@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>syntaks v5 — expanded example project</title>
+<title>syntaks v6 — basic notation examples</title>
 <style>
   :root{
     --bg:#282828;
@@ -68,7 +68,7 @@
 <div class="app">
   <aside>
     <header>
-      <h1>syntaks <span class="tiny">v5 expanded example project</span></h1>
+      <h1>syntaks <span class="tiny">v6 basic notation examples</span></h1>
       <input id="projectTitle" placeholder="Project title" />
       <div class="row" style="margin-top:8px">
         <button id="newProject">new</button>
@@ -117,7 +117,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'syntaks.minimal.project.v5';
+  const STORAGE_KEY = 'syntaks.minimal.project.v6';
   const $ = (id) => document.getElementById(id);
   const svg = $('svg');
   const viewport = $('viewport');
@@ -164,71 +164,65 @@
   function defaultProject() {
     return {
       version: 1,
-      title: 'Syntaksøvelse — eksempel med udfoldede træer',
+      title: 'Syntaksøvelse — grundled, udsagnsled, genstandsled osv.',
       trees: [
         makeExampleTree('tree-drengen-gabte', 'Drengen gabte.', [
-          ['root', 'Drengen gabte.', 0, -170, null],
-          ['w1', 'Drengen', -90, -55, 'root'],
-          ['w2', 'gabte', 90, -55, 'root'],
-          ['s1', 'S', -90, 55, 'w1'],
-          ['v1', 'V', 90, 55, 'w2']
+          ['root', 'Drengen gabte.', 0, -190, null],
+          ['s', 'S', -90, -70, 'root'],
+          ['v', 'V', 90, -70, 'root'],
+          ['w1', 'drengen', -90, 55, 's'],
+          ['w2', 'gabte', 90, 55, 'v']
         ]),
         makeExampleTree('tree-borgmesteren-giver', 'Borgmesteren giver Dronningen hånden.', [
-          ['root', 'Borgmesteren giver Dronningen hånden.', 0, -190, null],
-          ['w1', 'Borgmesteren', -210, -60, 'root'],
-          ['w2', 'giver', -70, -60, 'root'],
-          ['w3', 'Dronningen', 85, -60, 'root'],
-          ['w4', 'hånden', 230, -60, 'root'],
-          ['s1', 'S', -210, 60, 'w1'],
-          ['v1', 'V', -70, 60, 'w2'],
-          ['io1', 'IO', 85, 60, 'w3'],
-          ['do1', 'DO', 230, 60, 'w4']
+          ['root', 'Borgmesteren giver Dronningen hånden.', 0, -205, null],
+          ['s', 'S', -225, -75, 'root'],
+          ['v', 'V', -75, -75, 'root'],
+          ['io', 'IO', 80, -75, 'root'],
+          ['do', 'DO', 235, -75, 'root'],
+          ['w1', 'borgmesteren', -225, 55, 's'],
+          ['w2', 'giver', -75, 55, 'v'],
+          ['w3', 'dronningen', 80, 55, 'io'],
+          ['w4', 'hånden', 235, 55, 'do']
         ]),
         makeExampleTree('tree-drengen-koeber', 'Drengen køber slik.', [
-          ['root', 'Drengen køber slik.', 0, -170, null],
-          ['w1', 'Drengen', -150, -55, 'root'],
-          ['w2', 'køber', 0, -55, 'root'],
-          ['w3', 'slik', 150, -55, 'root'],
-          ['s1', 'S', -150, 55, 'w1'],
-          ['v1', 'V', 0, 55, 'w2'],
-          ['do1', 'DO', 150, 55, 'w3']
+          ['root', 'Drengen køber slik.', 0, -190, null],
+          ['s', 'S', -150, -70, 'root'],
+          ['v', 'V', 0, -70, 'root'],
+          ['do', 'DO', 150, -70, 'root'],
+          ['w1', 'drengen', -150, 55, 's'],
+          ['w2', 'køber', 0, 55, 'v'],
+          ['w3', 'slik', 150, 55, 'do']
         ]),
         makeExampleTree('tree-endelig-ankommer', 'Endelig ankommer toget.', [
-          ['root', 'Endelig ankommer toget.', 0, -170, null],
-          ['w1', 'Endelig', -150, -55, 'root'],
-          ['w2', 'ankommer', 0, -55, 'root'],
-          ['w3', 'toget', 150, -55, 'root'],
-          ['adv1', 'ADV', -150, 55, 'w1'],
-          ['v1', 'V', 0, 55, 'w2'],
-          ['s1', 'S', 150, 55, 'w3']
+          ['root', 'Endelig ankommer toget.', 0, -190, null],
+          ['a', 'A', -150, -70, 'root'],
+          ['v', 'V', 0, -70, 'root'],
+          ['s', 'S', 150, -70, 'root'],
+          ['w1', 'endelig', -150, 55, 'a'],
+          ['w2', 'ankommer', 0, 55, 'v'],
+          ['w3', 'toget', 150, 55, 's']
         ]),
         makeExampleTree('tree-uheldigvis-tabte', 'Uheldigvis tabte Michael mælken.', [
-          ['root', 'Uheldigvis tabte Michael mælken.', 0, -190, null],
-          ['w1', 'Uheldigvis', -210, -60, 'root'],
-          ['w2', 'tabte', -70, -60, 'root'],
-          ['w3', 'Michael', 85, -60, 'root'],
-          ['w4', 'mælken', 230, -60, 'root'],
-          ['adv1', 'ADV', -210, 60, 'w1'],
-          ['v1', 'V', -70, 60, 'w2'],
-          ['s1', 'S', 85, 60, 'w3'],
-          ['do1', 'DO', 230, 60, 'w4']
+          ['root', 'Uheldigvis tabte Michael mælken.', 0, -205, null],
+          ['a', 'A', -225, -75, 'root'],
+          ['v', 'V', -75, -75, 'root'],
+          ['s', 'S', 80, -75, 'root'],
+          ['do', 'DO', 235, -75, 'root'],
+          ['w1', 'uheldigvis', -225, 55, 'a'],
+          ['w2', 'tabte', -75, 55, 'v'],
+          ['w3', 'Michael', 80, 55, 's'],
+          ['w4', 'mælken', 235, 55, 'do']
         ]),
         makeExampleTree('tree-de-fleste-elever', 'De fleste elever er meget flittige.', [
-          ['root', 'De fleste elever er meget flittige.', 0, -230, null],
-          ['subj', 'De fleste elever', -160, -95, 'root'],
-          ['verb', 'er', 40, -95, 'root'],
-          ['pred', 'meget flittige', 220, -95, 'root'],
-          ['w1', 'De', -260, 30, 'subj'],
-          ['w2', 'fleste', -160, 30, 'subj'],
-          ['w3', 'elever', -60, 30, 'subj'],
-          ['v1', 'V', 40, 30, 'verb'],
-          ['w4', 'meget', 170, 30, 'pred'],
-          ['w5', 'flittige', 285, 30, 'pred'],
-          ['det1', 'DET', -260, 145, 'w1'],
-          ['adj1', 'ADJ', -160, 145, 'w2'],
-          ['s1', 'S', -60, 145, 'w3'],
-          ['adv1', 'ADV', 170, 145, 'w4'],
-          ['sp1', 'SP', 285, 145, 'w5']
+          ['root', 'De fleste elever er meget flittige.', 0, -205, null],
+          ['s', 'S', -225, -75, 'root'],
+          ['v', 'V', -75, -75, 'root'],
+          ['a', 'A', 80, -75, 'root'],
+          ['sp', 'SP', 235, -75, 'root'],
+          ['w1', 'de fleste elever', -225, 55, 's'],
+          ['w2', 'er', -75, 55, 'v'],
+          ['w3', 'meget', 80, 55, 'a'],
+          ['w4', 'flittige', 235, 55, 'sp']
         ])
       ]
     };
@@ -307,7 +301,7 @@
   function updateStatus(msg='') {
     const t = activeTree();
     $('statusLeft').textContent = t ? `${state.project.trees.indexOf(t) + 1}/${state.project.trees.length} · ${t.nodes.length} nodes${msg ? ' · ' + msg : ''}` : 'no tree';
-    $('statusRight').textContent = `v5-expanded-example · zoom ${Math.round(state.view.scale * 100)}%`;
+    $('statusRight').textContent = `v6-basic-notation · zoom ${Math.round(state.view.scale * 100)}%`;
   }
 
   function renderAll() {
