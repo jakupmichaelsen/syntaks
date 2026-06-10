@@ -312,7 +312,7 @@ Syntree.Page.prototype.getSVGString = function() {
     for (id in elements) {
         elementssvg += elements[id].graphic.getSVGString();
     }
-    var style = '<style type="text/css">text{font-family:sans-serif;font-size:14px;}</style>';
+    var style = '<style type="text/css">text{font-family:sans-serif;font-size:17px;}</style>';
     var marker = $('marker')[0].outerHTML;
     this.select(selected);
     return style + marker + bgsvg + elementssvg;

@@ -25,7 +25,7 @@ Syntree.config_maps.tree.map = {
      */
     rowHeight: {
         require: 'number',
-        default_value: 70,
+        default_value: 84,
     },
     /**
      * The root node of this Tree.
