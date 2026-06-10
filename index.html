@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>syntaks v6 — basic notation examples</title>
+<title>syntaks v7 — wrapped sentence node</title>
 <style>
   :root{
     --bg:#282828;
@@ -55,7 +55,7 @@
   .node rect{ fill:var(--node); stroke:var(--line); stroke-width:1.4; rx:4; }
   .node text{ fill:var(--text); dominant-baseline:middle; text-anchor:middle; pointer-events:none; }
   .node foreignObject{ overflow:visible; }
-  .node-edit{ width:100%; height:100%; background:var(--bg2); color:var(--text); border:1px solid var(--accent); border-radius:3px; text-align:center; padding:2px 6px; outline:none; }
+  .node-edit{ width:100%; height:100%; background:var(--bg2); color:var(--text); border:1px solid var(--accent); border-radius:3px; text-align:center; padding:2px 6px; outline:none; resize:none; overflow:hidden; }
   .node.active rect{ stroke:var(--accent); stroke-width:2.2; fill:var(--node-active); }
   .node:hover rect{ stroke:var(--blue); }
   .edge{ stroke:var(--line); stroke-width:1.4; fill:none; stroke-linecap:square; shape-rendering:crispEdges; }
@@ -68,7 +68,7 @@
 <div class="app">
   <aside>
     <header>
-      <h1>syntaks <span class="tiny">v6 basic notation examples</span></h1>
+      <h1>syntaks <span class="tiny">v7 wrapped sentence node</span></h1>
       <input id="projectTitle" placeholder="Project title" />
       <div class="row" style="margin-top:8px">
         <button id="newProject">new</button>
@@ -117,7 +117,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'syntaks.minimal.project.v6';
+  const STORAGE_KEY = 'syntaks.minimal.project.v7';
   const $ = (id) => document.getElementById(id);
   const svg = $('svg');
   const viewport = $('viewport');
@@ -301,7 +301,7 @@
   function updateStatus(msg='') {
     const t = activeTree();
     $('statusLeft').textContent = t ? `${state.project.trees.indexOf(t) + 1}/${state.project.trees.length} · ${t.nodes.length} nodes${msg ? ' · ' + msg : ''}` : 'no tree';
-    $('statusRight').textContent = `v6-basic-notation · zoom ${Math.round(state.view.scale * 100)}%`;
+    $('statusRight').textContent = `v7-wrapped-sentence · zoom ${Math.round(state.view.scale * 100)}%`;
   }
 
   function renderAll() {
@@ -348,12 +348,49 @@
     }));
   }
 
+  function isSentenceNode(tree, node) {
+    return node.parentId == null;
+  }
+
+  function wrapLabel(label, maxChars) {
+    const words = String(label || '…').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return ['…'];
+    const lines = [];
+    let line = '';
+    words.forEach(word => {
+      if (!line) {
+        line = word;
+      } else if ((line + ' ' + word).length <= maxChars) {
+        line += ' ' + word;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function nodeBox(tree, node) {
+    const sentence = isSentenceNode(tree, node);
+    const maxWidth = sentence ? 420 : 260;
+    const minWidth = sentence ? 160 : 48;
+    const maxChars = sentence ? 42 : 28;
+    const lines = sentence ? wrapLabel(node.label, maxChars) : [node.label || '…'];
+    const longest = Math.max(...lines.map(line => line.length), 1);
+    const width = Math.max(minWidth, Math.min(maxWidth, longest * 8 + 30));
+    const height = sentence ? Math.max(40, lines.length * 18 + 18) : 40;
+    return { width, height, lines };
+  }
+
   function drawTreeEdges(tree, group) {
     const parents = tree.nodes.filter(n => childrenOf(tree, n.id).length);
     parents.forEach(parent => {
+      const pBox = nodeBox(tree, parent);
       const kids = childrenOf(tree, parent.id).sort((a, b) => a.x - b.x);
       kids.forEach(kid => {
-        appendLine(group, parent.x, parent.y + 20, kid.x, kid.y - 20);
+        const kBox = nodeBox(tree, kid);
+        appendLine(group, parent.x, parent.y + pBox.height / 2, kid.x, kid.y - kBox.height / 2);
       });
     });
   }
@@ -371,19 +408,20 @@
     drawTreeEdges(t, edges);
 
     t.nodes.forEach(n => {
-      const width = Math.max(48, Math.min(260, n.label.length * 8 + 28));
+      const box = nodeBox(t, n);
+      const { width, height, lines } = box;
       const g = svgEl('g', { class: `node${n.id === state.selectedNodeId ? ' active' : ''}`, transform: `translate(${n.x},${n.y})`, 'data-id': n.id });
-      g.appendChild(svgEl('rect', { x: -width / 2, y: -20, width, height: 40 }));
+      g.appendChild(svgEl('rect', { x: -width / 2, y: -height / 2, width, height }));
       if (state.editingNodeId === n.id) {
-        const fo = svgEl('foreignObject', { x: -width / 2 + 4, y: -16, width: width - 8, height: 32 });
-        const input = document.createElement('input');
+        const fo = svgEl('foreignObject', { x: -width / 2 + 4, y: -height / 2 + 4, width: width - 8, height: height - 8 });
+        const input = isSentenceNode(t, n) ? document.createElement('textarea') : document.createElement('input');
         input.className = 'node-edit';
         input.value = state.editDraft;
         input.setAttribute('aria-label', 'Node label');
         input.addEventListener('pointerdown', ev => ev.stopPropagation());
         input.addEventListener('input', ev => { state.editDraft = ev.target.value; });
         input.addEventListener('keydown', ev => {
-          if (ev.key === 'Enter') { ev.preventDefault(); commitNodeEdit(); }
+          if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); commitNodeEdit(); }
           if (ev.key === 'Escape') { ev.preventDefault(); cancelNodeEdit(); }
         });
         input.addEventListener('blur', commitNodeEdit);
@@ -392,7 +430,13 @@
         requestAnimationFrame(() => { input.focus(); input.select(); });
       } else {
         const text = svgEl('text', { x: 0, y: 1 });
-        text.textContent = n.label || '…';
+        const lineHeight = 18;
+        const startY = -((lines.length - 1) * lineHeight) / 2 + 1;
+        lines.forEach((line, index) => {
+          const tspan = svgEl('tspan', { x: 0, y: startY + index * lineHeight });
+          tspan.textContent = line;
+          text.appendChild(tspan);
+        });
         g.appendChild(text);
       }
       g.addEventListener('pointerdown', nodePointerDown);
