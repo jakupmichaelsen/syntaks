@@ -245,10 +245,12 @@ input[type=text] {
   font-family: sans-serif;
   z-index: 101;
   padding: 1rem; }
-  .modal_body.modal_export, .modal_body.modal_open {
+  .modal_body.modal_export, .modal_body.modal_open, .modal_body.modal_help {
     width: 45%;
     top: 17.5%;
     left: 27.5%; }
+  .modal_body.modal_help .modal_section p {
+    margin-bottom: 0.5rem; }
   .modal_body.modal_tutorial {
     width: 40%;
     top: 38%;
