@@ -240,11 +240,10 @@ Syntree.Node.prototype.createGraphic = function() {
                         x: bbox.x2,
                         y: bbox.y - 10,
                     });
-                    // Position editor: bbox is in SVG local space, offset by pan transform
-                    var t = Syntree.Workspace.page.getTransform();
+                    // editor_container is offset by pan transform; editor position is relative to it
                     g.getEl('editor').css({
-                        'left': (bbox.x + t.dx) + 'px',
-                        'top': (bbox.y + t.dy) + 'px',
+                        'left': bbox.x + 'px',
+                        'top': bbox.y + 'px',
                     });
                     d.lastSyncedPosition = {
                         x: d.getPosition().x,
