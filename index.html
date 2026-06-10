@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>syntaks — minimal tree workspace</title>
+<title>syntaks v5 — expanded example project</title>
 <style>
   :root{
     --bg:#282828;
@@ -54,9 +54,11 @@
   .kbd{ color:var(--accent); }
   .node rect{ fill:var(--node); stroke:var(--line); stroke-width:1.4; rx:4; }
   .node text{ fill:var(--text); dominant-baseline:middle; text-anchor:middle; pointer-events:none; }
+  .node foreignObject{ overflow:visible; }
+  .node-edit{ width:100%; height:100%; background:var(--bg2); color:var(--text); border:1px solid var(--accent); border-radius:3px; text-align:center; padding:2px 6px; outline:none; }
   .node.active rect{ stroke:var(--accent); stroke-width:2.2; fill:var(--node-active); }
   .node:hover rect{ stroke:var(--blue); }
-  .edge{ stroke:var(--line); stroke-width:1.4; fill:none; }
+  .edge{ stroke:var(--line); stroke-width:1.4; fill:none; stroke-linecap:square; shape-rendering:crispEdges; }
   .ghost{ opacity:.45; }
   .notice{ padding:8px 12px; border-top:1px solid var(--soft); color:var(--muted); }
   .notice strong{ color:var(--text); }
@@ -66,7 +68,7 @@
 <div class="app">
   <aside>
     <header>
-      <h1>syntaks</h1>
+      <h1>syntaks <span class="tiny">v5 expanded example project</span></h1>
       <input id="projectTitle" placeholder="Project title" />
       <div class="row" style="margin-top:8px">
         <button id="newProject">new</button>
@@ -83,7 +85,7 @@
     <div id="treeList" class="tree-list"></div>
     <div class="notice tiny">
       <strong>Canvas:</strong> drag background to pan, wheel to zoom, drag nodes to move.<br>
-      <strong>Keys:</strong> <span class="kbd">Enter</span> edit, <span class="kbd">C</span> child, <span class="kbd">S</span> sibling, <span class="kbd">Del</span> delete.
+      <strong>Keys:</strong> <span class="kbd">←↑↓→</span> navigate, <span class="kbd">Enter</span> edit, <span class="kbd">C</span> child, <span class="kbd">S</span> sibling, <span class="kbd">Del</span> delete.
     </div>
   </aside>
   <main>
@@ -115,7 +117,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'syntaks.minimal.project.v1';
+  const STORAGE_KEY = 'syntaks.minimal.project.v5';
   const $ = (id) => document.getElementById(id);
   const svg = $('svg');
   const viewport = $('viewport');
@@ -126,6 +128,8 @@
     activeTreeId: null,
     selectedNodeId: null,
     view: { x: 0, y: 0, scale: 1 },
+    editingNodeId: null,
+    editDraft: '',
     drag: null,
     suppressClick: false
   };
@@ -143,16 +147,91 @@
     };
   }
 
+  function makeExampleTree(id, title, nodes) {
+    return {
+      id,
+      title,
+      nodes: nodes.map(n => ({
+        id: `${id}-${n[0]}`,
+        label: n[1],
+        x: n[2],
+        y: n[3],
+        parentId: n[4] == null ? null : `${id}-${n[4]}`
+      }))
+    };
+  }
+
   function defaultProject() {
-    const t = defaultTree('Jeg synes, at han er sød.');
-    const n1 = uid('node'), n2 = uid('node'), n3 = uid('node');
-    t.nodes = [
-      { id: t.nodes[0].id, label: 'S', x: 0, y: 0, parentId: null },
-      { id: n1, label: 'Jeg', x: -170, y: 95, parentId: t.nodes[0].id },
-      { id: n2, label: 'V', x: 0, y: 95, parentId: t.nodes[0].id },
-      { id: n3, label: 'at han er sød', x: 170, y: 95, parentId: t.nodes[0].id }
-    ];
-    return { version: 1, title: 'Syntaksøvelse', trees: [t] };
+    return {
+      version: 1,
+      title: 'Syntaksøvelse — eksempel med udfoldede træer',
+      trees: [
+        makeExampleTree('tree-drengen-gabte', 'Drengen gabte.', [
+          ['root', 'Drengen gabte.', 0, -170, null],
+          ['w1', 'Drengen', -90, -55, 'root'],
+          ['w2', 'gabte', 90, -55, 'root'],
+          ['s1', 'S', -90, 55, 'w1'],
+          ['v1', 'V', 90, 55, 'w2']
+        ]),
+        makeExampleTree('tree-borgmesteren-giver', 'Borgmesteren giver Dronningen hånden.', [
+          ['root', 'Borgmesteren giver Dronningen hånden.', 0, -190, null],
+          ['w1', 'Borgmesteren', -210, -60, 'root'],
+          ['w2', 'giver', -70, -60, 'root'],
+          ['w3', 'Dronningen', 85, -60, 'root'],
+          ['w4', 'hånden', 230, -60, 'root'],
+          ['s1', 'S', -210, 60, 'w1'],
+          ['v1', 'V', -70, 60, 'w2'],
+          ['io1', 'IO', 85, 60, 'w3'],
+          ['do1', 'DO', 230, 60, 'w4']
+        ]),
+        makeExampleTree('tree-drengen-koeber', 'Drengen køber slik.', [
+          ['root', 'Drengen køber slik.', 0, -170, null],
+          ['w1', 'Drengen', -150, -55, 'root'],
+          ['w2', 'køber', 0, -55, 'root'],
+          ['w3', 'slik', 150, -55, 'root'],
+          ['s1', 'S', -150, 55, 'w1'],
+          ['v1', 'V', 0, 55, 'w2'],
+          ['do1', 'DO', 150, 55, 'w3']
+        ]),
+        makeExampleTree('tree-endelig-ankommer', 'Endelig ankommer toget.', [
+          ['root', 'Endelig ankommer toget.', 0, -170, null],
+          ['w1', 'Endelig', -150, -55, 'root'],
+          ['w2', 'ankommer', 0, -55, 'root'],
+          ['w3', 'toget', 150, -55, 'root'],
+          ['adv1', 'ADV', -150, 55, 'w1'],
+          ['v1', 'V', 0, 55, 'w2'],
+          ['s1', 'S', 150, 55, 'w3']
+        ]),
+        makeExampleTree('tree-uheldigvis-tabte', 'Uheldigvis tabte Michael mælken.', [
+          ['root', 'Uheldigvis tabte Michael mælken.', 0, -190, null],
+          ['w1', 'Uheldigvis', -210, -60, 'root'],
+          ['w2', 'tabte', -70, -60, 'root'],
+          ['w3', 'Michael', 85, -60, 'root'],
+          ['w4', 'mælken', 230, -60, 'root'],
+          ['adv1', 'ADV', -210, 60, 'w1'],
+          ['v1', 'V', -70, 60, 'w2'],
+          ['s1', 'S', 85, 60, 'w3'],
+          ['do1', 'DO', 230, 60, 'w4']
+        ]),
+        makeExampleTree('tree-de-fleste-elever', 'De fleste elever er meget flittige.', [
+          ['root', 'De fleste elever er meget flittige.', 0, -230, null],
+          ['subj', 'De fleste elever', -160, -95, 'root'],
+          ['verb', 'er', 40, -95, 'root'],
+          ['pred', 'meget flittige', 220, -95, 'root'],
+          ['w1', 'De', -260, 30, 'subj'],
+          ['w2', 'fleste', -160, 30, 'subj'],
+          ['w3', 'elever', -60, 30, 'subj'],
+          ['v1', 'V', 40, 30, 'verb'],
+          ['w4', 'meget', 170, 30, 'pred'],
+          ['w5', 'flittige', 285, 30, 'pred'],
+          ['det1', 'DET', -260, 145, 'w1'],
+          ['adj1', 'ADJ', -160, 145, 'w2'],
+          ['s1', 'S', -60, 145, 'w3'],
+          ['adv1', 'ADV', 170, 145, 'w4'],
+          ['sp1', 'SP', 285, 145, 'w5']
+        ])
+      ]
+    };
   }
 
   function activeTree() {
@@ -228,7 +307,7 @@
   function updateStatus(msg='') {
     const t = activeTree();
     $('statusLeft').textContent = t ? `${state.project.trees.indexOf(t) + 1}/${state.project.trees.length} · ${t.nodes.length} nodes${msg ? ' · ' + msg : ''}` : 'no tree';
-    $('statusRight').textContent = `zoom ${Math.round(state.view.scale * 100)}%`;
+    $('statusRight').textContent = `v5-expanded-example · zoom ${Math.round(state.view.scale * 100)}%`;
   }
 
   function renderAll() {
@@ -265,6 +344,26 @@
     return el;
   }
 
+  function appendLine(group, x1, y1, x2, y2) {
+    group.appendChild(svgEl('line', {
+      class: 'edge',
+      x1: Math.round(x1),
+      y1: Math.round(y1),
+      x2: Math.round(x2),
+      y2: Math.round(y2)
+    }));
+  }
+
+  function drawTreeEdges(tree, group) {
+    const parents = tree.nodes.filter(n => childrenOf(tree, n.id).length);
+    parents.forEach(parent => {
+      const kids = childrenOf(tree, parent.id).sort((a, b) => a.x - b.x);
+      kids.forEach(kid => {
+        appendLine(group, parent.x, parent.y + 20, kid.x, kid.y - 20);
+      });
+    });
+  }
+
   function renderCanvas() {
     viewport.innerHTML = '';
     applyView();
@@ -275,25 +374,35 @@
     const nodes = svgEl('g');
     viewport.append(edges, nodes);
 
-    t.nodes.forEach(n => {
-      if (!n.parentId) return;
-      const p = getNode(t, n.parentId);
-      if (!p) return;
-      edges.appendChild(svgEl('path', {
-        class: 'edge',
-        d: `M ${p.x} ${p.y + 20} C ${p.x} ${(p.y + n.y) / 2}, ${n.x} ${(p.y + n.y) / 2}, ${n.x} ${n.y - 20}`
-      }));
-    });
+    drawTreeEdges(t, edges);
 
     t.nodes.forEach(n => {
       const width = Math.max(48, Math.min(260, n.label.length * 8 + 28));
       const g = svgEl('g', { class: `node${n.id === state.selectedNodeId ? ' active' : ''}`, transform: `translate(${n.x},${n.y})`, 'data-id': n.id });
       g.appendChild(svgEl('rect', { x: -width / 2, y: -20, width, height: 40 }));
-      const text = svgEl('text', { x: 0, y: 1 });
-      text.textContent = n.label || '…';
-      g.appendChild(text);
+      if (state.editingNodeId === n.id) {
+        const fo = svgEl('foreignObject', { x: -width / 2 + 4, y: -16, width: width - 8, height: 32 });
+        const input = document.createElement('input');
+        input.className = 'node-edit';
+        input.value = state.editDraft;
+        input.setAttribute('aria-label', 'Node label');
+        input.addEventListener('pointerdown', ev => ev.stopPropagation());
+        input.addEventListener('input', ev => { state.editDraft = ev.target.value; });
+        input.addEventListener('keydown', ev => {
+          if (ev.key === 'Enter') { ev.preventDefault(); commitNodeEdit(); }
+          if (ev.key === 'Escape') { ev.preventDefault(); cancelNodeEdit(); }
+        });
+        input.addEventListener('blur', commitNodeEdit);
+        fo.appendChild(input);
+        g.appendChild(fo);
+        requestAnimationFrame(() => { input.focus(); input.select(); });
+      } else {
+        const text = svgEl('text', { x: 0, y: 1 });
+        text.textContent = n.label || '…';
+        g.appendChild(text);
+      }
       g.addEventListener('pointerdown', nodePointerDown);
-      g.addEventListener('dblclick', () => editNode(n.id));
+      g.addEventListener('dblclick', () => beginNodeEdit(n.id));
       nodes.appendChild(g);
     });
   }
@@ -375,7 +484,7 @@
     state.selectedNodeId = n.id;
     renderAll();
     saveLocal();
-    editNode(n.id);
+    beginNodeEdit(n.id);
   }
 
   function addSibling() {
@@ -393,7 +502,7 @@
     state.selectedNodeId = newNode.id;
     renderAll();
     saveLocal();
-    editNode(newNode.id);
+    beginNodeEdit(newNode.id);
   }
 
   function deleteNode() {
@@ -416,20 +525,72 @@
     saveLocal();
   }
 
-  function editNode(id) {
+  function sortedSiblings(tree, node) {
+    return tree.nodes
+      .filter(n => n.parentId === node.parentId)
+      .sort((a, b) => a.x - b.x || a.y - b.y);
+  }
+
+  function selectNode(id) {
+    if (!id) return;
+    state.selectedNodeId = id;
+    renderCanvas();
+    updateStatus();
+  }
+
+  function navigateNode(direction) {
+    const t = activeTree();
+    const n = selectedNode();
+    if (!t || !n) return;
+
+    if (direction === 'up') {
+      if (n.parentId) selectNode(n.parentId);
+      return;
+    }
+
+    if (direction === 'down') {
+      const kids = childrenOf(t, n.id).sort((a, b) => Math.abs(a.x - n.x) - Math.abs(b.x - n.x) || a.x - b.x);
+      if (kids[0]) selectNode(kids[0].id);
+      return;
+    }
+
+    const siblings = sortedSiblings(t, n);
+    const index = siblings.findIndex(s => s.id === n.id);
+    if (direction === 'left' && index > 0) selectNode(siblings[index - 1].id);
+    if (direction === 'right' && index >= 0 && index < siblings.length - 1) selectNode(siblings[index + 1].id);
+  }
+
+  function beginNodeEdit(id) {
     const t = activeTree();
     const n = t && getNode(t, id);
     if (!n) return;
-    const value = prompt('Node label:', n.label);
-    if (value === null) return;
-    n.label = value.trim() || '…';
     state.selectedNodeId = n.id;
-    renderAll();
+    state.editingNodeId = n.id;
+    state.editDraft = n.label || '';
+    renderCanvas();
+  }
+
+  function commitNodeEdit() {
+    if (!state.editingNodeId) return;
+    const t = activeTree();
+    const n = t && getNode(t, state.editingNodeId);
+    if (n) n.label = state.editDraft.trim() || '…';
+    state.editingNodeId = null;
+    state.editDraft = '';
+    renderCanvas();
     saveLocal();
+  }
+
+  function cancelNodeEdit() {
+    state.editingNodeId = null;
+    state.editDraft = '';
+    renderCanvas();
   }
 
   function nodePointerDown(e) {
     e.stopPropagation();
+    if (e.target.closest && e.target.closest('.node-edit')) return;
+    if (state.editingNodeId) commitNodeEdit();
     const t = activeTree();
     const node = t && getNode(t, e.currentTarget.dataset.id);
     if (!node) return;
@@ -437,11 +598,12 @@
     const world = clientToWorld(e.clientX, e.clientY);
     state.drag = { type: 'node', id: node.id, dx: node.x - world.x, dy: node.y - world.y, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
-    renderAll();
+    renderCanvas();
   }
 
   svg.addEventListener('pointerdown', (e) => {
     if (e.target.closest && e.target.closest('.node')) return;
+    if (state.editingNodeId) commitNodeEdit();
     state.drag = { type: 'pan', startX: e.clientX, startY: e.clientY, viewX: state.view.x, viewY: state.view.y, moved: false };
     svg.classList.add('panning');
     svg.setPointerCapture(e.pointerId);
@@ -601,7 +763,11 @@
   window.addEventListener('keydown', (e) => {
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
-    if (e.key === 'Enter') { e.preventDefault(); if (state.selectedNodeId) editNode(state.selectedNodeId); }
+    if (e.key === 'Enter') { e.preventDefault(); if (state.selectedNodeId) beginNodeEdit(state.selectedNodeId); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); navigateNode('up'); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); navigateNode('down'); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigateNode('left'); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); navigateNode('right'); }
     if (e.key.toLowerCase() === 'c') { e.preventDefault(); addChild(); }
     if (e.key.toLowerCase() === 's') { e.preventDefault(); addSibling(); }
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteNode(); }
@@ -610,9 +776,15 @@
 
   function init() {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && confirm('Restore autosaved syntaks project?')) {
-      try { state.project = normalizeProject(JSON.parse(saved)); }
-      catch { state.project = defaultProject(); }
+    if (saved) {
+      try {
+        state.project = normalizeProject(JSON.parse(saved));
+        updateStatus('restored autosave');
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+        state.project = defaultProject();
+        updateStatus('autosave was invalid; started new project');
+      }
     }
     state.activeTreeId = state.project.trees[0].id;
     state.selectedNodeId = state.project.trees[0].nodes[0]?.id || null;
